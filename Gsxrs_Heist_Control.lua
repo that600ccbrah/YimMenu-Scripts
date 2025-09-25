@@ -1,589 +1,374 @@
--- Define MPX as a function that returns the appropriate prefix string
-local function MPX()
-    return "MP" .. stats.get_int("MPPLY_LAST_MP_CHAR") .. "_"
-end
--- Global Variables
+--Required Stats----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Free Mode Global Variables
-FMg = 262145 -- free mode global ("CASH_MULTIPLIER")
-APg = FMg + 31084 -- agency payout global ("FIXER_FINALE_LEADER_CASH_REWARD")
-XMg = FMg + 1 -- xp multiplier global ("XP_MULTIPLIER")
-CSg1    = 1575035 						-- change session (type) 1 					// Guide:   NETWORK::UGC_SET_USING_OFFLINE_CONTENT(false);
+local function MPX()
+	local PI = stats.get_int("MPPLY_LAST_MP_CHAR")
+	if PI == 0 then
+		return "MP0_"
+	elseif PI == 1 then
+		return "MP1_"
+	else
+		return "MP0_"
+	end
+end
+
+local function SPX()
+	local PI = ENTITY.GET_ENTITY_MODEL(PLAYER.PLAYER_PED_ID())
+	if PI == joaat("Player_Zero") then
+		return "SP0_"
+	elseif PI == joaat("Player_One") then
+		return "SP1_"
+	elseif PI == joaat("Player_Two") then
+		return "SP2_"
+	else
+		return "SP0_"
+	end
+end
+
+is_player_male = (ENTITY.GET_ENTITY_MODEL(PLAYER.PLAYER_PED_ID()) == joaat("mp_m_freemode_01"))
+
+local currentlevel = stats.get_int(MPX() .. "CHAR_RANK_FM")
+local currentrp = stats.get_int(MPX() .. "CHAR_XP_FM")
+local currentcrewlevel = stats.get_int("MPPLY_CURRENT_CREW_RANK")
+
+script.register_looped("AutoStatsUpdater", function(script)
+    local success, err = pcall(function()
+        local newlevel = stats.get_int(MPX() .. "CHAR_RANK_FM")
+        local newrp = stats.get_int(MPX() .. "CHAR_XP_FM")
+        local newcrewlevel = stats.get_int("MPPLY_CURRENT_CREW_RANK")
+
+        if newlevel ~= currentlevel or newrp ~= currentrp or newcrewlevel ~= currentcrewlevel then
+            currentlevel = newlevel
+            currentrp = newrp
+            currentcrewlevel = newcrewlevel
+        end
+    end)
+    
+    if not success then
+        gui.show_message("Stats Update Error", "Failed to update stats: " .. tostring(err))
+    end
+end)
+
+--Required Scripts--
+
+FMC = "fm_mission_controller"
+FMMCL = "fmmc_launcher"
+FMC2020 = "fm_mission_controller_2020"
+HIP = "heist_island_planning"
+
+--Globals & Locals & Variables--
+
+FMg = 262145 -- free mode global ("CASH_MULTIPLIER") //correct
+CSg1    = 1575038 						-- change session (type) 1 					// Guide:   NETWORK::UGC_SET_USING_OFFLINE_CONTENT(false);
 CSg2    = 1574589 						-- change session (switch) 2 				// Guide:   MP_POST_MATCH_TRANSITION_SCENE
 CSg3    = 1574589 + 2 					-- change session (quit) 3 					// Guide:   MP_POST_MATCH_TRANSITION_SCENE
--- Auto Shop variables
-ASIFl1 = 50150 + 1 -- auto shop instant finish local 1 
-ASIFl2 = 50150 + 1770 + 1 -- auto shop finish local 2 
-ASRBl = 383 -- auto shop reload board local 
-ASPg1 = FMg + 30338 + 1 -- auto shop payout global 1 ("TUNER_ROBBERY_LEADER_CASH_REWARD0")
-ASPg2 = FMg + 30338 + 8 -- auto shop payout global 2 ("TUNER_ROBBERY_LEADER_CASH_REWARD7")
-ASFg = FMg + 30334 -- auto shop fee global ("TUNER_ROBBERY_CONTACT_FEE")
-ASCKg = FMg + 30357 -- auto shop cooldown global ("TUNER_ROBBERY_COOLDOWN_TIME")
 
-
--- Doomsday Heist Variables
-DDSHl = 1271 + 135 -- doomsday doomsday scenario hack local
-DCg1 = 1960755 + 812 + 50 + 1 -- doomsday player 1 cut global
-DCg2 = 1960755 + 812 + 50 + 2 -- doomsday player 2 cut global
-DCg3 = 1960755 + 812 + 50 + 3 -- doomsday player 3 cut global
-DCg4 = 1960755 + 812 + 50 + 4 -- doomsday player 4 cut global
-GCg = 2685249 + 6615 -- global cut global (value2 = value2 * (num / 100f);)
-
--- Cayo Perico Heist Variables
-CPRSl = 1546 -- cayo perico reload screen local 
-CPCg1 = 1971648 + 831 + 56 + 1 -- cayo perico player 1 cut global
-CPCg2 = 1971648 + 831 + 56 + 2 -- cayo perico player 2 cut global
-CPCg3 = 1971648 + 831 + 56 + 3 -- cayo perico player 3 cut global
-CPCg4 = 1971648 + 831 + 56 + 4 -- cayo perico player 4 cut global
-CPBg = FMg + 29211
-CPFHl = 24880  -- cayo perico fingerprint hack local 
-CPPCCl = 30939 + 3 -- cayo perico plasma cutter cut local ("DLC_H4_anims_glass_cutter_Sounds") 
-CPSTCl = 29700 -- cayo perico drainage pipe cut local
-
--- Apartment Heist Variables
-ACg1 = 1928958 + 1 + 1 -- global apartment player 1 cut global
-ACg2 = 1928958 + 1 + 2 -- global apartment player 2 cut global
-ACg3 = 1928958 + 1 + 3 -- global apartment player 3 cut global
-ACg4 = 1928958 + 1 + 4 -- global apartment player 4 cut global
-ACg5 = 1930926 + 3008 + 1 -- local apartment player 1 cut global
+-- Apartment Heist
+ACg1 = 1931323 + 1 + 1 -- global apartment player 1 cut global ("fmmc_launcher")
+ACg2 = 1931323 + 1 + 2 -- global apartment player 2 cut global ("fmmc_launcher")
+ACg3 = 1931323 + 1 + 3 -- global apartment player 3 cut global ("fmmc_launcher")
+ACg4 = 1931323 + 1 + 4 -- global apartment player 4 cut global ("fmmc_launcher")
+ACg5 = 1933291 + 3008 + 1 -- local apartment player 1 cut global ("fmmc_launcher")
 AUAJg1 = FMg + 9101 -- apartment unlock all jobs global 1 ("ROOT_ID_HASH_THE_FLECCA_JOB")
 AUAJg2 = FMg + 9106 -- apartment unlock all jobs global 2 ("ROOT_ID_HASH_THE_PRISON_BREAK")
 AUAJg3 = FMg + 9113 -- apartment unlock all jobs global 3 ("ROOT_ID_HASH_THE_HUMANE_LABS_RAID")
 AUAJg4 = FMg + 9119 -- apartment unlock all jobs global 4 ("ROOT_ID_HASH_SERIES_A_FUNDING")
 AUAJg5 = FMg + 9125 -- apartment unlock all jobs global 5 ("ROOT_ID_HASH_THE_PACIFIC_STANDARD_JOB")
-AIFl3 = 19746 -- apartment instant finish local 1
-AIFl4 = 28365 + 1 -- apartment instant finish local 2
-AIFl5 = 31621 + 69 -- apartment instant finish local 3
-AFHl = 11778 + 24 -- apartment fleeca hack local 
-AFDl = 10069 + 11 -- apartment fleeca drill local
+AIFl3 = 19787 -- apartment instant finish local 1
+AIFl4 = 19787 + 2686 -- apartment instant finish local 2
+AIFl5 = 28407 + 1 -- apartment instant finish local 3
+AIFl6 = 31663 + 1 + 68
+AFHl = 11818 + 24 -- apartment fleeca hack local
+AFDl = 10107 + 11 -- apartment fleeca drill local
+AHSo = 19789  -- Apartment heist skip checkpoint
 
--- Diamond Casino Heist Variables
-DCRBl = 185 -- diamond casino reload board local
-DCCg1 = 1964849 + 1497 + 736 + 92 + 1 -- diamond casino player 1 cut global
-DCCg2 = 1964849 + 1497 + 736 + 92 + 2 -- diamond casino player 2 cut global
-DCCg3 = 1964849 + 1497 + 736 + 92 + 3 -- diamond casino player 3 cut global
-DCCg4 = 1964849 + 1497 + 736 + 92 + 4 -- diamond casino player 4 cut global
-DCCl = FMg +28313  -- Casino_Cut_Lester_offset
-DCCh = FMg+28349-1 --Casino_Cut_Hacker_offset
-DCCd = FMg+28344-1 --Casino_Cut_Driver_offset
-DCCgun = FMg + 28339-1 --Casino_Cut_Gunman_offset
-DCFHl = 53019      -- diamond casino fingerprint hack local
-DCKHl = 54085      -- diamond casino keypad hack local
-DCDVDl1 = 10109 + 7 -- diamond casino drill vault door local 1
-DCDVDl2 = 10109 + 37 -- diamond casino drill vault door local 2
+-- Diamond Casino Heist
+DCRBl = 208 -- diamond casino reload board local
+DCCg1 = 1967717 + 1497 + 736 + 92 + 1 -- diamond casino player 1 cut global ("gb_casino_heist_planning")
+DCCg2 = 1967717 + 1497 + 736 + 92 + 2 -- diamond casino player 2 cut global ("gb_casino_heist_planning")
+DCCg3 = 1967717 + 1497 + 736 + 92 + 3 -- diamond casino player 3 cut global ("gb_casino_heist_planning")
+DCCg4 = 1967717 + 1497 + 736 + 92 + 4 -- diamond casino player 4 cut global ("gb_casino_heist_planning")
+DCCl = FMg + 28313 -- ("CH_LESTER_CUT")
+DCCh = FMg + 28349 - 1 --("2027377935")
+DCCd = FMg + 28344 - 1 --("88090906")
+DCCgun = FMg + 28339 - 1 --("74718927")
+DCFHl = 53127 -- diamond casino fingerprint hack local
+DCKHl = 54193 -- diamond casino keypad hack local
+DCDVDl1 = 10107 + 7 -- diamond casino drill vault door local 1 --("DLC_HEIST_MINIGAME_FLEECA_DRILLING_SCENE") in ("fm_mission_controller")
+DCDVDl2 = 10107 + 37 -- diamond casino drill vault door local 2 --("fm_mission_controller")
+DCXf1 = 19787
+DCXf2 = 19787 + 1062
+DCXf3 = 19787 + 1740 + 1
+DCXf4 = 19787 + 2686
+DCXf5 = 28407 + 1
+DCXf6 = 31663 + 1 + 68
 
--- Bunker Variables
-BUCg1 = FMg + 21018 -- bunker unlocker cooldown global 1 (946764522)
-BUCg2 = FMg + 21264 -- bunker unlocker cooldown global 2 ("GR_RESEARCH_CAPACITY")
-BUCg3 = FMg + 21265 -- bunker unlocker cooldown global 3 ("GR_RESEARCH_PRODUCTION_TIME")
-BUCg4 = FMg + 21266 -- bunker unlocker cooldown global 4 ("GR_RESEARCH_UPGRADE_EQUIPMENT_REDUCTION_TIME")
-BUAg1 = FMg + 21268 -- bunker unlocker additional global 1 (1485279815)
-BUAg2 = FMg + 21269 -- bunker unlocker additional global 2 (2041812011)
-GSIg = 1663174 		-- get supplies instantly global ("OR_PSUP_DEL)
-BCISl = 1211 + 774 	-- bunker crash instant sell local
-BCFp1 = FMg + 32359 -- bunker fast production (ENABLE_CONTROL_SUPPLY_GUNRUNNINGBUNKER_CARGO)
-BCFp2 = FMg + 21249 -- bunker fast production (GR_MANU_PRODUCTION_TIME)
-BCFp3 = FMg + 32366 -- bunker fast production (SPEED_SUPPLY_GUNRUNNINGBUNKER_CARGO)
+-- Cayo Perico Heist
+CPRSl = 1566 -- cayo perico reload screen local
+CPCg1 = 1974520 + 831 + 56 + 1 -- cayo perico player 1 cut global --("heist_island_planning")
+CPCg2 = 1974520 + 831 + 56 + 2 -- cayo perico player 2 cut global --("heist_island_planning")
+CPCg3 = 1974520 + 831 + 56 + 3 -- cayo perico player 3 cut global --("heist_island_planning")
+CPCg4 = 1974520 + 831 + 56 + 4 -- cayo perico player 4 cut global --("heist_island_planning")
+CPFHl = 25058 -- cayo perico fingerprint hack local ("heist") in ("fm_mission_controller_2020")
+CPPCCl = 31123 + 3 -- cayo perico plasma cutter cut local ("DLC_H4_anims_glass_cutter_Sounds") in ("fm_mission_controller_2020")
+CPSTCl = 29883 -- cayo perico drainage pipe cut local ("IntroFinished") in ("fm_mission_controller_2020")
+CPXf1 = 54353 -- cayo perico instant finish local 1
+CPXf2 = 54353 + 1776 + 1 -- cayo perico instant finish local 2
 
+-- Doomsday Heist
+DDSHl = 1294 + 135 -- doomsday doomsday scenario hack local
+DCg1 = 1963610 + 812 + 50 + 1 -- doomsday player 1 cut global --("gb_gang_ops_planning")
+DCg2 = 1963610 + 812 + 50 + 2 -- doomsday player 2 cut global --("gb_gang_ops_planning")
+DCg3 = 1963610 + 812 + 50 + 3 -- doomsday player 3 cut global --("gb_gang_ops_planning")
+DCg4 = 1963610 + 812 + 50 + 4 -- doomsday player 4 cut global --("gb_gang_ops_planning")
 
--- Hangar Variables
-HCVPg = FMg + 22492 -- hangar cargo vip payout global (-954321460)
-HCVRCg = FMg + 22475 -- hangar cargo vip ron's cut (1232447926)
-HCVISl1 = 1934 + 1078 -- hangar cargo vip instant sell local 1
-HCVISl2 = 1934 + 768 -- hangar cargo vip instant sell local 2
+IHPB = 54353 --Instant Heist Passed Local Base (Casino And CayoPerico)
+IHPL = 54353 + 1776 + 1 --Instant Heist Passed Locals (Casino And CayoPerico)
 
--- Nightclub Variables
-NHCNSg = FMg + 23969 -- nightclub helper cargo n shipments global (1162393585)
-NHSGg = FMg + 23963 -- nightclub helper sporting goods global (-1523050891)
-NHSAIg = FMg + 23964 -- nightclub helper s.a. imports global (147773667)
-NHPRg = FMg + 24595 -- nightclub helper pharmaceutical reseacrh global (-1188700671)
-NHOPg = FMg + 23965 -- nightclub helper organic produce global (-1188963032)
-NHPNCg = FMg + 23967 -- nightclub helper printing n copying global (967514627)
-NHCCg = FMg + 23968 -- nightclub helper cash creation global (1983962738)
-NHCKg1 = FMg + 24026 -- nightclub helper cooldown killer global 1 (1763921019)
-NHCKg2 = FMg + 24067 -- nightclub helper cooldown killer global 2 (-1004589438)
-NHCKg3 = FMg + 24068 -- nightclub helper cooldown killer global 3 (464940095)
-NLSCg = FMg + 23680 -- night loop safe capacity global ("NIGHTCLUBMAXSAFEVALUE")
-NLISg = FMg + 23657 -- night loop income start global ("NIGHTCLUBINCOMEUPTOPOP5")
-NLIEg = FMg + 23676 -- night loop income end global ("NIGHTCLUBINCOMEUPTOPOP100")
-NLCl = 181 + 32 + 1 -- night loop collect local
+NLCl = 204 + 32 + 1 --("nightclub_office_cutscene") in ("am_mp_nightclub")
 
--- Special Cargo Variables
-SCVPg = FMg + 15732 	-- special cargo vip price global ("EXEC_CONTRABAND_SALE_VALUE_THRESHOLD1")
-SCVCKg1 = FMg + 15499 	-- special cargo vip cooldown global 1 ("EXEC_BUY_COOLDOWN")
-SCVCKg2 = FMg + 15500 	-- special cargo vip cooldown global 2 ("EXEC_SELL_COOLDOWN")
-SCVMTl = 545 + 7 		-- special cargo vip mission type local
-SCVISl = 545 + 1 		-- special cargo vip instant sell local
+SNOW = FMg + 4413
+halloweatherAddress = FMg + 32157
 
+--BV = Ballastic Value----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Dripfeed Vehicles Variables
-EDVg1 = FMg + 35629 -- enable dripfeed vehicles global 1 ("ENABLE_VEHICLE_ENVISAGE")
-EDVg2 = FMg + 35630 -- enable dripfeed vehicles global 2 ("ENABLE_VEHICLE_EUROSX32")
-EDVg3 = FMg + 35631 -- enable dripfeed vehicles global 3 ("ENABLE_VEHICLE_POLIMPALER5")
-EDVg4 = FMg + 35632 -- enable dripfeed vehicles global 4 ("ENABLE_VEHICLE_POLGREENWOOD")
-BEDVg5 = 2707347 -- enable dripfeed vehicles global 5 ("Bypass")
-EDVg5 = FMg + 35633 -- enable dripfeed vehicles global 6 ("ENABLE_VEHICLE_PIPISTRELLO")
-EDVg6 = FMg + 35634 -- enable dripfeed vehicles global 6 ("ENABLE_VEHICLE_POLIMPALER6")
-EDVg7 = FMg + 35635 -- enable dripfeed vehicles global 7 ("ENABLE_VEHICLE_CASTIGATOR")
-EDVg8 = FMg + 35636 -- enable dripfeed vehicles global 8 ("ENABLE_VEHICLE_DOMINATOR10")
-EDVg9 = FMg + 35637 -- enable dripfeed vehicles global 9 ("ENABLE_VEHICLE_VORSCHLAGHAMMER")
-EDVg10 = FMg + 35638 -- enable dripfeed vehicles global 10 ("ENABLE_VEHICLE_PARAGON3")
-EDVg11 = FMg + 35639 -- enable dripfeed vehicles global 11 ("ENABLE_VEHICLE_POLDORADO")
-EDVg12 = FMg + 35640 -- enable dripfeed vehicles global 12 ("ENABLE_VEHICLE_POLDOMINATOR10")
-EDVg13 = FMg + 35641 -- enable dripfeed vehicles global 13 ("ENABLE_VEHICLE_NIOBE")
-EDVg14 = FMg + 35642 -- enable dripfeed vehicles global 14 ("ENABLE_VEHICLE_COQUETTE5")
-EDVg15 = FMg + 35643 -- enable dripfeed vehicles global 15 ("ENABLE_VEHICLE_PIZZABOY")
-EVg1 = FMg + 34323 -- enables dripfeed vehicles ("ENABLE_VEHICLE_EXEMPLAR")
+BV = FMg + 20024
 
--- MC Business Variables
-MCPwv = FMg + 17323   --  price of weed ("BIKER_WEED_PRODUCT_VALUE")
-MCPmV = FMg + 17322   --  price of meth ("BIKER_METH_PRODUCT_VALUE")
-MCPcockV = FMg + 17321   --  price of cocaine ("BIKER_CRACK_PRODUCT_VALUE")
-MCPcashV = FMg + 17320   --  price of cash ("BIKER_COUNTERCASH_PRODUCT_VALUE")
-MCPfakeV = FMg + 17319   --  price of fake ID ("BIKER_FAKEIDS_PRODUCT_VALUE")
-MCPacidV = FMg + 17324   --  price of acid ("BIKER_ACID_PRODUCT_VALUE")
+--CCBL = Casino Chips Buy Limit-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Collectibles Variables
-CUg = 2708057 -- collectibles unlocker global ("cellphone_badger")
-SJo = 211 -- signal jammers offset
+CCBL0 = FMg + 26534
+CCBL1 = FMg + 26535
 
--- Salvage Yard Variables
-SYVVg = FMg + 33035 -- salvage yard vehicle value global ("SALV23_VEHICLE_ROBBERY_VALUE_0")
-SYCKg = FMg + 33027 -- salvage yard can keep global ("SALV23_VEHICLE_ROBBERY_CAN_KEEP_0")
-SYCg1 = FMg + 33064 --  salvage yard cooldown global ("SALV23_VEH_ROB_COOLDOWN_TIME")
-SYCg2 = FMg + 3306 --  salvage yard cooldown global ("SALV23_CFR_COOLDOWN_TIME")
---GUN VAN VARIABLES
-GVADg = FMg + 33303
-GVWDg = FMg + 33284
-GVTDg = FMg + 33295
+--BAS=Bag Size------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+BAS1 = FMg + 29210
 
+--PSV=Panther Statue-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+PSV = FMg + 29462
 
--- Required Functions --
+--PDIAMOND=Pink Diamond---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-local function MoneyFormatter(n)
-	n = tostring(n)
-	return n:reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
-end
+PDIAMOND = FMg + 29460
 
-	stat_ranges = {
-		{stat = "PSTAT_BOOL", start = 0, finish = 191},
-		{stat = "???", start = 192, finish = 512},
-		{stat = "MP_PSTAT_BOOL", start = 513, finish = 704},
-		{stat = "???", start = 705, finish = 2918},
-		{stat = "MP_TUPSTAT_BOOL", start = 2919, finish = 3110},
-		{stat = "TUPSTAT_BOOL", start = 3111, finish = 3878},
-		{stat = "???", start = 3879, finish = 4206},
-		{stat = "NGPSTAT_BOOL", start = 4207, finish = 4334},
-		{stat = "MP_NGPSTAT_BOOL", start = 4335, finish = 4398},
-		{stat = "???", start = 4399, finish = 6028},
-		{stat = "NGTATPSTAT_BOOL", start = 6029, finish = 6412},
-		{stat = "???", start = 6413, finish = 7320},
-		{stat = "MP_NGDLCPSTAT_BOOL", start = 7321, finish = 7384},
-		{stat = "NGDLCPSTAT_BOOL", start = 7385, finish = 7640},
-		{stat = "???", start = 7641, finish = 9360},
-		{stat = "DLCBIKEPSTAT_BOOL", start = 9361, finish = 9552},
-		{stat = "???", start = 9553, finish = 15368},
-		{stat = "DLCGUNPSTAT_BOOL", start = 15369, finish = 15560},
-		{stat = "???", start = 15561, finish = 15561},
-		{stat = "GUNTATPSTAT_BOOL", start = 15562, finish = 15945},
-		{stat = "DLCSMUGCHARPSTAT_BOOL", start = 15946, finish = 16009},
-		{stat = "???", start = 16010, finish = 18097},
-		{stat = "GANGOPSPSTAT_BOOL", start = 18098, finish = 18161},
-		{stat = "???", start = 18162, finish = 22065},
-		{stat = "BUSINESSBATPSTAT_BOOL", start = 22066, finish = 22193},
-		{stat = "???", start = 22194, finish = 24961},
-		{stat = "ARENAWARSPSTAT_BOOL", start = 24962, finish = 25537},
-		{stat = "???", start = 25538, finish = 26809},
-		{stat = "CASINOPSTAT_BOOL", start = 26810, finish = 27257},
-		{stat = "???", start = 27256, finish = 28097},
-		{stat = "CASINOHSTPSTAT_BOOL", start = 28098, finish = 28353},
-		{stat = "???", start = 28354, finish = 28354},
-		{stat = "HEIST3TATTOOSTAT_BOOL", start = 28355, finish = 28482},
-		{stat = "???", start = 28483, finish = 30226},
-		{stat = "SU20PSTAT_BOOL", start = 30227, finish = 30354},
-		{stat = "SU20TATTOOSTAT_BOOL", start = 30355, finish = 30482},
-		{stat = "???", start = 30483, finish = 30514},
-		{stat = "HISLANDPSTAT_BOOL", start = 30515, finish = 30706},
-		{stat = "???", start = 30707, finish = 31706},
-		{stat = "TUNERPSTAT_BOOL", start = 31707, finish = 32282},
-		{stat = "FIXERPSTAT_BOOL", start = 32283, finish = 32410},
-		{stat = "FIXERTATTOOSTAT_BOOL", start = 32411, finish = 32474},
-		{stat = "???", start = 32475, finish = 34122},
-		{stat = "GEN9PSTAT_BOOL", start = 34123, finish = 34250},
-		{stat = "DLC12022PSTAT_BOOL", start = 34251, finish = 34762},
-		{stat = "???", start = 34763, finish = 36626},
-		{stat = "DLC22022PSTAT_BOOL", start = 36627, finish = 36946},
-		{stat = "???", start = 36947, finish = 41250},
-		{stat = "DLC22022TATTOOSTAT_BOOL", start = 41251, finish = 41314},
-		{stat = "DLC12023PSTAT_BOOL", start = 41315, finish = 42082},
-		{stat = "???", start = 42083, finish = 42106},
-		{stat = "DLC22023PSTAT_BOOL", start = 42107, finish = 42298},
-		{stat = "???", start = 42299, finish = 51058},
-		{stat = "DLC22023TATTOOSTAT_BOOL", start = 51059, finish = 51186}
-	}
+--BB=Bearer Bonds---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-local function stats_set_packed_bools(packed_bool_start, packed_bool_finish, bool)
-	for i = packed_bool_start, packed_bool_finish do
-		stats.set_packed_stat_bool(i, bool)
-	end
-end
+BB = FMg + 29459
 
-local function changeSession(session)
-	globals.set_int(CSg1, session)
-	if session == -1 then
-		globals.set_int(CSg3, -1)
-	end
-	sleep(0.5)
-	globals.set_int(CSg2, 1)
-	sleep(0.5)
-	globals.set_int(CSg2, 0)
-end
-local function globals_set_ints(global_start, global_finish, step, value)
-	for i = global_start, global_finish, step do
-		globals.set_int(i, value)
-	end
-end
+--RN=Ruby Necklace--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-local function null() end
+RN = FMg + 29458
 
+--TEQUILA=Tequila---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+TEQUILA = FMg + 29457
 
--- Heist Control Tab
-Silent = gui.get_tab(">Gsxr's Heist Control<")
-Silent:add_text("version 1.70")
-Silent:add_text("YOUR RP LEVEL IS " .. stats.get_int(joaat(MPX() .. "CHAR_RANK_FM")))
-Silent:add_text("YOUR CREW RANK IS " .. stats.get_int(joaat("MPPLY_CURRENT_CREW_RANK")))
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Heist Editor tab
-Heist_Editor = Silent:add_tab(">GsxrBrahs Heist Control<")
+GSXR = gui.get_tab("HEIST CONTROL")
 
--- Agency tab
+GSXR:add_text("                      HEIST CONTROL FOR 1.71")
+GSXR:add_text("                               BY GSXRMODZ")
 
-local contract_id = {3, 4, 12, 28, 60, 124, 252, 508, 2044, 4095, -1}
-local CONTRACT_ID = {
-    NIGHTCLUB_LEAK = 3,
-    HIGH_SOCIETY_LEAK = 4,
-    SOUTH_CENTRAL_LEAK = 10,
-    DONT_FUCK_WITH_DRE = 11
-}
-local function setAgencyContract(contractId)
-    stats.set_int(MPX() .. "FIXER_STORY_BS", contract_id[contractId])
-end
-local Agency = Heist_Editor:add_tab("Agency By GSXR")
-
-Agency:add_button("Nightclub Leak", function() setAgencyContract(CONTRACT_ID.NIGHTCLUB_LEAK) end)
-Agency:add_sameline()
-Agency:add_button("High Society Leak", function() setAgencyContract(CONTRACT_ID.HIGH_SOCIETY_LEAK) end)
-Agency:add_sameline()
-Agency:add_button("South Central Leak", function() setAgencyContract(CONTRACT_ID.SOUTH_CENTRAL_LEAK) end)
-Agency:add_sameline()
-Agency:add_button("Don't Fuck With Dre", function() setAgencyContract(CONTRACT_ID.DONT_FUCK_WITH_DRE) end)
-Agency:add_button("Complete Preps",
-    function()
-        stats.set_int(MPX() .. "FIXER_GENERAL_BS", -1)
-        stats.set_int(MPX() .. "FIXER_COMPLETED_BS", -1)
-        stats.set_int(MPX() .. "FIXER_STORY_COOLDOWN", -1)
-    end)
-Agency:add_separator()
-Agency:add_text("Money")
-local agencySafe = Agency:add_checkbox("Agency Safe Loop")
-script.register_looped("agencyloop", function(script)
-    script:yield()
-    if agencySafe:is_enabled() == true then
-        gui.show_message("Business Manager", "Supplying Agency Safe with money")
-        STATS.STAT_SET_INT(joaat(MPX() .. "FIXER_COUNT"), 500, true)
-        STATS.STAT_SET_INT(joaat(MPX() .. "FIXER_PASSIVE_PAY_TIME_LEFT"), -1, true)
-        script:sleep(500)
-    end
+GSXR:add_imgui(function()
+    ImGui.Text("Your level                " .. currentlevel)
+    ImGui.Text("Your RP Value      " .. currentrp)
+    ImGui.Text("Current Crew Level   " .. currentcrewlevel)
 end)
-Agency:add_separator()
-Agency:add_text("Payouts:")
-Agency:add_text("Set The Payout After The final mission starts:")
-Agency:add_button("Max Payout", function() globals.set_int(APg, 2500000) end)
-Agency:add_text("")
-Agency:add_text("Custom Payout:")
-local agencyPayout = Agency:add_input_int("Payout")
-Agency:add_button("Set Payout", function() globals.set_int(APg, agencyPayout:get_value()) end)
-Agency:add_separator()
-Agency:add_text("After All choices and pressing Complete Preps wait for sometime")
 
--- Autoshop tab
-local Autoshop = Heist_Editor:add_tab("Autoshop By GSXR")
-Autoshop:add_text("Missions")
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
--- Define a function to set the contract index
-local function setContractIndex(index)
-  stats.set_int(MPX() .. "TUNER_CURRENT", index - 1)
-end
 
--- Create a table to store contract data
-local contracts = {
-  { name = "Union Repository", index = 1 },
-  { name = "The Superdollar Deal", index = 2 },
-  { name = "The Bank Contract", index = 3 },
-  { name = "The ECU Job", index = 4 },
-  { name = "The Prison Contract", index = 5 },
-  { name = "The Agency Deal", index = 6 },
-  { name = "The Lost Contract", index = 7 },
-  { name = "The Data Contract", index = 8 },
-}
 
--- Loop through the contracts table to create buttons
-for _, contract in ipairs(contracts) do
-	
-  Autoshop:add_button(contract.name, function()
-    setContractIndex(contract.index)
-  end)
-  if contract.index ~= 4 then
-		Autoshop:add_sameline()
-  end
-end
+HeistsDataEditorMenu = GSXR:add_tab("Heists Data Editor Menu")
 
--- Complete Preps button
-Autoshop:add_button("Complete Preps", function()
-  script.run_in_fiber(function(script)
-    local currentMission = stats.get_int(MPX() .. "TUNER_CURRENT")
-    local prepValue = currentMission == 1 and 4351 or 12543
-    stats.set_int(MPX() .. "TUNER_GEN_BS", prepValue)
-    script:sleep(1000)
-    locals.set_int("tuner_planning", ASRBl, 2) 
-  end)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ApartmentDataEditorMenu = HeistsDataEditorMenu:add_tab("Apartment Data Editor Menu")
+
+ApartmentDataEditorMenu:add_button("Skip Preps", function()
+	stats.set_int(MPX() .. "HEIST_PLANNING_STAGE", -1)
 end)
-Autoshop:add_separator()
-Autoshop:add_text("Reload Planning")
-Autoshop:add_button("Reload Planning",
-function ()
-	locals.set_int("tuner_planning", ASRBl, 2)
+
+ApartmentDataEditorMenu:add_sameline()
+
+ApartmentDataEditorMenu:add_button("Reset Preps", function()
+	stats.set_int(MPX() .. "HEIST_PLANNING_STAGE", 0)
+end)
+
+ApartmentDataEditorMenu:add_text("")
+ApartmentDataEditorMenu:add_text("For Fleeca:")
+ApartmentDataEditorMenu:add_text(
+	'Pay for the preparation, start the first mission and as soon as you are sent to scout\nchange the session, come back to planning room, press "Complete Preps" near white board and press "E"'
+)
+ApartmentDataEditorMenu:add_text("For Other Heist:")
+ApartmentDataEditorMenu:add_text(
+	'Start the mission and leave after the 1st cutscene ends, press "Complete Preps" near white board and press "E"'
+)
+
+ApartmentDataEditorMenu:add_separator()
+ApartmentDataEditorMenu:add_text("Cuts to All")
+ApartmentDataEditorMenu:add_text("Fleeca Job Heist:")
+ApartmentDataEditorMenu:add_button("100", function()
+	globals.set_int(ACg1, -200)
+	globals.set_int(ACg2, 100)
+end)
+ApartmentDataEditorMenu:add_text("")
+ApartmentDataEditorMenu:add_text("Other Heists:")
+ApartmentDataEditorMenu:add_button("100", function()
+	globals.set_int(ACg1, -300)
+	globals.set_int(ACg2, 100)
+	globals.set_int(ACg3, 100)
+	globals.set_int(ACg4, 100)
+end)
+
+local apartCut1 = 0
+local apartCut2 = 0
+local apartCut3 = 0
+local apartCut4 = 0
+ApartmentDataEditorMenu:add_imgui(function()
+	ImGui.Text("Custom Cuts:")
+	ImGui.SetNextItemWidth(150)
+	apartCut1 = ImGui.InputInt("Cut 1", apartCut1)
+	ImGui.SameLine()
+	ImGui.SetNextItemWidth(150)
+	apartCut2 = ImGui.InputInt("Cut 2", apartCut2)
+	ImGui.SetNextItemWidth(150)
+	apartCut3 = ImGui.InputInt("Cut 3", apartCut3)
+	ImGui.SameLine()
+	ImGui.SetNextItemWidth(150)
+	apartCut4 = ImGui.InputInt("Cut 4", apartCut4)
+	ImGui.Text("For Fleeca Heist")
+	if ImGui.Button("Set Cuts") then
+		globals.set_int(ACg1, 100 - (apartCut1 * 2))
+		globals.set_int(ACg2, apartCut2)
+	end
+	ImGui.Text("For Other Heists")
+	if ImGui.Button("Set Cuts") then
+		globals.set_int(ACg1, 100 - (apartCut1 * 4))
+		globals.set_int(ACg2, apartCut2)
+		globals.set_int(ACg3, apartCut3)
+		globals.set_int(ACg4, apartCut4)
+	end
+	if ImGui.Button("Set Negative to Positive (own)") then
+		globals.set_int(ACg5, -1 * (-100 + globals.get_int(ACg1)) / 2)
+	end
+end)
+ApartmentDataEditorMenu:add_separator()
+ApartmentDataEditorMenu:add_text("Extras")
+ApartmentDataEditorMenu:add_button("Bypass Fleeca Hack", function()
+	locals.set_int(FMC, AFHl, 7)
+end)
+ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Bypass Fleeca Drill", function()
+	locals.set_float(FMC, AFDl, 100)
+end)
+ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Skip Checkpoint", function()
+    locals.set_int(FMC, AHSo, locals.get_int(FMC, AHSo) | (1 << 17))
 end
 )
-Autoshop:add_separator()
-Autoshop:add_text("Payouts:")
-Autoshop:add_button("Max Payout",
+ApartmentDataEditorMenu:add_button("Play the Heist Alone",
 function()
-	globals.set_float(ASFg, 0)
-	for i = ASPg1, ASPg2 do
-		globals.set_int(i, 2000000)
-	end
-end)
-Autoshop:add_text("Custom Payout:")
-local autoshopPayout = Autoshop:add_input_int("Payout")
-Autoshop:add_button("Set Payout",
-function ()
-	globals.set_float(ASFg, 0)
-	for i = ASPg1, ASPg2 do
-		globals.set_int(i, autoshopPayout:get_value())
-	end
-end)
-Autoshop:add_separator()
-Autoshop:add_text("Instant Finish")
-Autoshop:add_button("Instant Finish",
-function ()
-	locals.set_int("fm_mission_controller_2020", ASIFl1, 51338977)
-	locals.set_int("fm_mission_controller_2020", ASIFl2, 101)
-end
-)
-
--- Salvage Yard --
-local function set_all_vehicles_available()
-    for i = 1, 3 do
-        stats.set_int(MPX() .. "SALV23_VEHROB_STATUS" .. (i - 1), 0)
-    end
-end
-local function YardPrepsSetter(value)
-	stats.set_int(MPX() .. "SALV23_GEN_BS", value)
-	stats.set_int(MPX() .. "SALV23_SCOPE_BS", value)
-	stats.set_int(MPX() .. "SALV23_FM_PROG", value)
-	stats.set_int(MPX() .. "SALV23_INST_PROG", value)
-end
-
-local availablity1 = 0
-local availablity2 = 0
-local availablity3 = 0
-local claims = {
-	"Unclaimable",
-	"Claimable"
-}
-local vehicles = {
-	"First Vehicle",
-	"Second Vehicle",
-	"Third Vehicle"
-}
-local salPrice = 0
-local salvalues = {
-	{ id = 1, name="First Vehicle"},
-	{ id = 2, name="Second Vehicle"},
-	{ id = 3, name="Third Vehicle"}
-}
-local vehicle = 0
-local Salvage = Heist_Editor:add_tab("Salvage Yard By GSXR")
-Salvage:add_text("Alter Vehicle Cost")
-Salvage:add_text("")
-Salvage:add_text("Set Vehicle value to $600,000 | Safe")
-for _, salvalue in ipairs(salvalues) do
-	Salvage:add_button(salvalue.name,
-	function ()
-		globals.set_int(SYVVg + salvalue.id, 600000)
-	end)
-	Salvage:add_sameline()
-end
-Salvage:add_imgui(
-	function ()
-		ImGui.Text("Custom Vehicle Value")
-		salPrice = ImGui.InputInt("Price", salPrice)
-		vehicle = ImGui.Combo("Vehicle", vehicle, vehicles, 3)
-		if ImGui.Button("Set Vehicle Value") then
-			globals.set_int(SYVVg + vehicle + 1, salPrice)
-		end
-		ImGui.Text("Set Availibility Status")
-		ImGui.SetNextItemWidth(160)
-		availablity1 = ImGui.Combo("", availablity1, claims, 2)
-		ImGui.SameLine()
-		ImGui.SetNextItemWidth(160)
-		ImGui.SameLine()
-		availablity2 = ImGui.Combo("  ", availablity2, claims, 2)
-		ImGui.SameLine()
-		ImGui.SetNextItemWidth(160)
-		availablity3 = ImGui.Combo("   ", availablity3, claims, 2)
-		if ImGui.Button("Set Claimability") then
-			globals.set_int(SYCKg + 1, availablity1)
-			globals.set_int(SYCKg + 2, availablity2)
-			globals.set_int(SYCKg + 3, availablity3)
+	if locals.get_int(FMMCL, 19990 + 34) ~= nil then
+		if locals.get_int(FMMCL, 19990 + 34) ~= 0 then
+			if locals.get_int(FMMCL, 19990 + 34) > 1 then
+					locals.set_int(FMMCL, 19990 + 15, 1)
+                    globals.set_int(794954 + 4 + 1 + (locals.get_int(FMMCL, 19990 + 34) * 95) + 75, 1)
+			end
+			globals.set_int(4718592 + 3539, 1)
+            globals.set_int(4718592 + 3540, 1)
+            globals.set_int(4718592 + 3542 + 1, 1)
+            globals.set_int(4718592 + 184007 + 1, 0)
 		end
 	end
-)
-Salvage:add_separator()
-Salvage:add_text("Set All vehicles as available")
-Salvage:add_button("Set All vehicles as available", function() set_all_vehicles_available() end)
-Salvage:add_text("Complete All Preps")
-Salvage:add_button("Complete All Preps", function() YardPrepsSetter(-1) end)
-Salvage:add_separator()
-Salvage:add_text("Reset All preps")
-Salvage:add_button("Reset All Preps", function() YardPrepsSetter(0) end)
-Salvage:add_separator()
-Salvage:add_text("Others")
-Salvage:add_button("Kill Cooldown",
+end)
+ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Unlock All Jobs", function()
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_0", globals.get_int(AUAJg1))
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_0_L", 5)
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_1", globals.get_int(AUAJg2))
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_1_L", 5)
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_2", globals.get_int(AUAJg3))
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_2_L", 5)
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_3", globals.get_int(AUAJg4))
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_3_L", 5)
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_4", globals.get_int(AUAJg5))
+	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_4_L", 5)
+end)
+ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Instant Finish",
 function()
-	for i = SYCg1, SYCg2 do
-		globals.set_int(i, 0)
-	end
-end)
-Salvage:add_sameline()
-Salvage:add_button("Reload Planning",
-function()
-	locals.set_int("vehrob_planning",512,2)
-end)
-
-
-
--- Cluckin Bell --
-local cluckperps = {
-	{ id = 0 , name = "Slush Fund"},
-	{ id = 1 , name = "Breaking and Entering"},
-	{ id = 3 , name = "Concealed Rewards"},
-	{ id = 7 , name = "Hit And Run"},
-	{ id = 15, name = "Disorganized Crime"},
-	{ id = 31, name = "Scene of Crime"}
-}
-
-local Cluck = Heist_Editor:add_tab("Cluckin Bell Heist By GSXR")
-
-Cluck:add_text("Complete All Preps")
-
-for _,cluckprep in ipairs(cluckperps) do
-	Cluck:add_button(cluckprep.name,
-	function ()
-		stats.set_int(MPX() .. "SALV23_INST_PROG", cluckprep.id)
-	end)
-	Cluck:add_sameline()
-end
-Cluck:add_separator()
-Cluck:add_text("Reset All preps")
-Cluck:add_button("Reset All Preps",
-function ()
-	stats.set_int(MPX() .. "SALV23_INST_PROG", 0)
+	locals.set_int(FMC, AIFl3, 12)
+	locals.set_int(FMC, AIFl4, 99999)
+	locals.set_int(FMC, AIFl5, 99999)
+	locals.set_int(FMC, AIFl6, 99999)
 end
 )
-
-
--- Cut Setter for Heist --
-
-local function CutsPresetter(global_start, global_finish, cut)
-	globals.set_int(GCg, cut)
-	for i = global_start, global_finish do
-		globals.set_int(i, cut)		
-	end
-end
-
--- Doomsday --
-local function DoomsdayActSetter(progress, status)
-	stats.set_int(MPX() .. "GANGOPS_FLOW_MISSION_PROG", progress)
-	stats.set_int(MPX() .. "GANGOPS_HEIST_STATUS", status)
-	stats.set_int(MPX() .. "GANGOPS_FLOW_NOTIFICATIONS", 1557)
-end
-
-local Doomsday = Heist_Editor:add_tab("Doomsday Heist By GSXR")
-Doomsday:add_text("Doomsday Acts")
-Doomsday:add_button("Data Breaches",
-function ()
-	DoomsdayActSetter(503, 229383)
-
-end)
-Doomsday:add_sameline()
-Doomsday:add_button("Bogdan Problem",
-function ()
-	DoomsdayActSetter(240, 229378)
-end)
-Doomsday:add_sameline()
-Doomsday:add_button("Doomsday Scenario",
-function ()
-	DoomsdayActSetter(16368, 229380)
-end)
-
-Doomsday:add_text("Set Doomsday Heist Cuts")
-Doomsday:add_text("Preset Cut")
-Doomsday:add_button("100",
-function ()
-	CutsPresetter(DCg1, DCg4, 100)
+ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Instant Finish (Pacific Standard)", function()
+    locals.set_int(FMC, 19787 + 1062, 5)
+    locals.set_int(FMC, 19787 + 1740 + 1, 80)
+    locals.set_int(FMC, 19787 + 2686, 10000000)
+    locals.set_int(FMC, 28407 + 1, 99999)
+    locals.set_int(FMC, 31663 + 1 + 68, 99999)
 end
 )
-Doomsday:add_text("Custom Cuts")
-local dmsdyCut1 = Doomsday:add_input_int("Cut 1")
-local dmsdyCut2 = Doomsday:add_input_int("Cut 2")
-local dmsdyCut3 = Doomsday:add_input_int("Cut 3")
-local dmsdyCut4 = Doomsday:add_input_int("Cut 4")
-Doomsday:add_button("Set Cuts",
-function ()
-	globals.set_int(DCg1, dmsdyCut1:get_value())
-	globals.set_int(DCg2, dmsdyCut2:get_value())
-	globals.set_int(DCg3, dmsdyCut3:get_value())
-	globals.set_int(DCg4, dmsdyCut4:get_value())
+ApartmentDataEditorMenu:add_text("Note: After Clicking Unlock All jobs, restart the game")
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+CasinoHeistEditorMenu = HeistsDataEditorMenu:add_tab("Casino Heist")
+
+CasinoHeistEditorMenu:add_button("One Click Setup Casino Silent&Sneaky", function()
+	stats.set_int(MPX() .. "H3OPT_APPROACH", 1)
+	stats.set_int(MPX() .. "H3_LAST_APPROACH", 3)
+	stats.set_int(MPX() .. "H3OPT_TARGET", 3)
+	stats.set_int(MPX() .. "H3OPT_BITSET1", 127)
+	stats.set_int(MPX() .. "H3OPT_DISRUPTSHIP", 3)
+	stats.set_int(MPX() .. "H3OPT_KEYLEVELS", 2)
+	stats.set_int(MPX() .. "H3OPT_CREWWEAP", 4)
+	stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 5)
+	stats.set_int(MPX() .. "H3OPT_CREWHACKER", 5)
+	stats.set_int(MPX() .. "H3OPT_VEHS", 2)
+	stats.set_int(MPX() .. "H3OPT_WEAPS", 1)
+	stats.set_int(MPX() .. "H3OPT_BITSET0", 262399)
+	stats.set_int(MPX() .. "H3OPT_MASKS", 2)
 end)
-Doomsday:add_separator()
-Doomsday:add_text("Preps")
-Doomsday:add_button("Reset Preps",
-function ()
-	DoomsdayActSetter(240, 0)
-end
-)
-Doomsday:add_sameline()
-Doomsday:add_button("Complete Preps",
-function ()
-	stats.set_int(MPX() .. "GANGOPS_FM_MISSION_PROG", -1)
-end
-)
-Doomsday:add_separator()
-Doomsday:add_text("By pass Doomsday Scenario hack")
-Doomsday:add_button("By Act III Pass hack",
-function ()
-	locals.set_int("fm_mission_controller", DDSHl, 3)
-end
-)
--- Casino Heist --
-local CasinoHeist = Heist_Editor:add_tab("Diamond Casino Heist By GSXR")
-CasinoHeist:add_text("Preps")
-CasinoHeist:add_text("")
+
+CasinoHeistEditorMenu:add_button("One Click Setup Casino The Big Con. Mode", function()
+	stats.set_int(MPX() .. "H3OPT_APPROACH", 2)
+	stats.set_int(MPX() .. "H3_LAST_APPROACH", 3)
+	stats.set_int(MPX() .. "H3OPT_TARGET", 3)
+	stats.set_int(MPX() .. "H3OPT_BITSET1", 799)
+	stats.set_int(MPX() .. "H3OPT_DISRUPTSHIP", 3)
+	stats.set_int(MPX() .. "H3OPT_KEYLEVELS", 2)
+	stats.set_int(MPX() .. "H3OPT_CREWWEAP", 4)
+	stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 5)
+	stats.set_int(MPX() .. "H3OPT_CREWHACKER", 5)
+	stats.set_int(MPX() .. "H3OPT_VEHS", 2)
+	stats.set_int(MPX() .. "H3OPT_WEAPS", 0)
+	stats.set_int(MPX() .. "H3OPT_BITSET0", 913623)
+	stats.set_int(MPX() .. "H3OPT_MASKS", 2)
+end)
+
+CasinoHeistEditorMenu:add_button("One Click Setup Casino Aggressive Mode", function()
+	stats.set_int(MPX() .. "H3OPT_APPROACH", 3)
+	stats.set_int(MPX() .. "H3_LAST_APPROACH", 1)
+	stats.set_int(MPX() .. "H3OPT_TARGET", 3)
+	stats.set_int(MPX() .. "H3OPT_BITSET1", 799)
+	stats.set_int(MPX() .. "H3OPT_DISRUPTSHIP", 3)
+	stats.set_int(MPX() .. "H3OPT_KEYLEVELS", 2)
+	stats.set_int(MPX() .. "H3OPT_CREWWEAP", 4)
+	stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 5)
+	stats.set_int(MPX() .. "H3OPT_CREWHACKER", 5)
+	stats.set_int(MPX() .. "H3OPT_VEHS", 2)
+	stats.set_int(MPX() .. "H3OPT_WEAPS", 1)
+	stats.set_int(MPX() .. "H3OPT_BITSET0", 1835223)
+	stats.set_int(MPX() .. "H3OPT_MASKS", 2)
+end)
+
+CasinoHeistEditorMenu:add_text("Preps")
+CasinoHeistEditorMenu:add_text("")
 local function CasinoApproachSetter(last_approach, hard_approach, approach, selected_approach)
 	stats.set_int(MPX() .. "H3_LAST_APPROACH", last_approach)
 	stats.set_int(MPX() .. "H3_HARD_APPROACH", hard_approach)
@@ -597,39 +382,43 @@ local function CasinoCompletePreps()
 	stats.set_int(MPX() .. "H3OPT_BITSET1", -1)
 	stats.set_int(MPX() .. "H3OPT_COMPLETEDPOSIX", -1)
 end
-local casinoPrimaryTargets = {
-	{ name="Diamond", value=3 },
-	{ name="Gold", value=1 },
-	{ name="Arts", value=2 },
-	{ name="Cash", value=0 }
-}
-local casinoApproachs = {
-	{ name="Silent & Sneaky", value=127 , settings={ 2, 1, 3, 1 }},
-	{ name="Big Con", value=799, settings={ 1, 2, 3, 2 } },
-	{ name="Aggressive", value=799, settings={ 1, 2, 3, 3 }}
-}
-CasinoHeist:add_text("Primary Target")
-
-for _, casinoprimarytarget in ipairs(casinoPrimaryTargets) do
-	CasinoHeist:add_button(casinoprimarytarget.name,
-	function ()
-		stats.set_int(MPX() .. "H3OPT_TARGET", casinoprimarytarget.value)
-	end)
-	CasinoHeist:add_sameline()
-end
-CasinoHeist:add_separator()
-CasinoHeist:add_text("Select Apprach")
-for _, casinoApproach in ipairs(casinoApproachs) do
-	CasinoHeist:add_button(casinoApproach.name,
-	function ()
-		CasinoApproachSetter(casinoApproach.settings[1], casinoApproach.settings[2], casinoApproach.settings[3], casinoApproach.settings[4])
-		stats.set_int(MPX() .. "H3OPT_BITSET1", casinoApproach.value)
-		stats.set_int(MPX() .. "H3OPT_WEAPS", 0)
-	end)
-	CasinoHeist:add_sameline()
-end
-CasinoHeist:add_separator()
-CasinoHeist:add_text("Gun Man")
+CasinoHeistEditorMenu:add_text("Primary Target")
+CasinoHeistEditorMenu:add_button("Diamond", function()
+	stats.set_int(MPX() .. "H3OPT_TARGET", 3)
+end)
+CasinoHeistEditorMenu:add_sameline()
+CasinoHeistEditorMenu:add_button("Gold", function()
+	stats.set_int(MPX() .. "H3OPT_TARGET", 1)
+end)
+CasinoHeistEditorMenu:add_sameline()
+CasinoHeistEditorMenu:add_button("Arts", function()
+	stats.set_int(MPX() .. "H3OPT_TARGET", 2)
+end)
+CasinoHeistEditorMenu:add_sameline()
+CasinoHeistEditorMenu:add_button("Cash", function()
+	stats.set_int(MPX() .. "H3OPT_TARGET", 0)
+end)
+CasinoHeistEditorMenu:add_separator()
+CasinoHeistEditorMenu:add_text("Select Apprach")
+CasinoHeistEditorMenu:add_button("Silent & Sneaky", function()
+	CasinoApproachSetter(2, 1, 3, 1)
+	STATS.STAT_SET_INT(MPX() .. "H3OPT_BITSET1", 127)
+	stats.set_int(MPX() .. "H3OPT_WEAPS", 0)
+end)
+CasinoHeistEditorMenu:add_sameline()
+CasinoHeistEditorMenu:add_button("Big Con", function()
+	CasinoApproachSetter(1, 2, 3, 2)
+	STATS.STAT_SET_INT(MPX() .. "H3OPT_BITSET1", 799)
+	stats.set_int(MPX() .. "H3OPT_WEAPS", 0)
+end)
+CasinoHeistEditorMenu:add_sameline()
+CasinoHeistEditorMenu:add_button("Aggressive", function()
+	CasinoApproachSetter(2, 3, 1, 3)
+	STATS.STAT_SET_INT(MPX() .. "H3OPT_BITSET1", 799)
+	stats.set_int(MPX() .. "H3OPT_WEAPS", 0)
+end)
+CasinoHeistEditorMenu:add_separator()
+CasinoHeistEditorMenu:add_text("Gun Man")
 local gunman = 0
 local driver = 0
 local hacker = 0
@@ -648,7 +437,7 @@ local GunManLoadoutSi = {
 	"Gustavo Mota/Carbine Rifle",
 	"Gustavo Mota/Assault Shotgun",
 	"Chester McCoy/Pump Shotgun Mk II",
-	"Chester McCoy/Carbine Rifle Mk II"
+	"Chester McCoy/Carbine Rifle Mk II",
 }
 local GunManLoadoutBC = {
 	"Karl Abolaji/Micro SMG",
@@ -660,7 +449,7 @@ local GunManLoadoutBC = {
 	"Gustavo Mota/Carbine Rifle",
 	"Gustavo Mota/Assault Shotgun",
 	"Chester McCoy/SMG Mk II",
-	"Chester McCoy/Bullpup Rifle Mk II"
+	"Chester McCoy/Bullpup Rifle Mk II",
 }
 local GunManLoadoutAg = {
 	"Karl Abolaji/Sawed-Off Shotgun",
@@ -672,7 +461,7 @@ local GunManLoadoutAg = {
 	"Gustavo Mota/Carbine Rifle",
 	"Gustavo Mota/Assault Shotgun",
 	"Chester McCoy/Pump Shotgun Mk II",
-	"Chester McCoy/Assault Rifle Mk II"
+	"Chester McCoy/Assault Rifle Mk II",
 }
 local DriverLoad = {
 	"Karim Denz/Issi Classic",
@@ -694,409 +483,681 @@ local DriverLoad = {
 	"Chester McCoy/Zhaba",
 	"Chester McCoy/Vagrant",
 	"Chester McCoy/Outlaw",
-	"Chester McCoy/Everon"
-
+	"Chester McCoy/Everon",
 }
 local hackerLoad = {
-	"Select", "Rickie Lukens","Christian Feltz", "Yohan Blair", "Avi Schwartzman",  "Page Harris"
+	"Select",
+	"Rickie Lukens",
+	"Christian Feltz",
+	"Yohan Blair",
+	"Avi Schwartzman",
+	"Page Harris",
 }
 local maskLoad = {
-	"Select", "Geometic Set", "Hunter Set", "Oni Half Mask Set", "Emoji Set", "Ornate Skull Set", "Lucky Fruit Set", "Guerilla Set", "Clown Set", "Animal Set", "Riot Set", "Oni Full Mask Set", "Hockey Set"
+	"Select",
+	"Geometic Set",
+	"Hunter Set",
+	"Oni Half Mask Set",
+	"Emoji Set",
+	"Ornate Skull Set",
+	"Lucky Fruit Set",
+	"Guerilla Set",
+	"Clown Set",
+	"Animal Set",
+	"Riot Set",
+	"Oni Full Mask Set",
+	"Hockey Set",
 }
-CasinoHeist:add_imgui(
-	function ()
-		if stats.get_int(MPX() .. "H3OPT_APPROACH") == 1 then
-			ImGui.SetNextItemWidth(265)
-			gunman = ImGui.Combo("Loadout", gunman, GunManLoadoutSi, 10)
-			
-		elseif stats.get_int(MPX() .. "H3OPT_APPROACH") == 2 then
-			ImGui.SetNextItemWidth(265)
-			gunman = ImGui.Combo("Loadout", gunman, GunManLoadoutBC, 10)
-		elseif stats.get_int(MPX() .. "H3OPT_APPROACH") == 3 then
-			ImGui.SetNextItemWidth(265)
-			gunman = ImGui.Combo("Loadout", gunman, GunManLoadoutAg, 10)
-		end
+CasinoHeistEditorMenu:add_imgui(function()
+	if stats.get_int(MPX() .. "H3OPT_APPROACH") == 1 then
+		ImGui.SetNextItemWidth(265)
+		gunman = ImGui.Combo("Loadout", gunman, GunManLoadoutSi, 10)
+	elseif stats.get_int(MPX() .. "H3OPT_APPROACH") == 2 then
+		ImGui.SetNextItemWidth(265)
+		gunman = ImGui.Combo("Loadout", gunman, GunManLoadoutBC, 10)
+	elseif stats.get_int(MPX() .. "H3OPT_APPROACH") == 3 then
+		ImGui.SetNextItemWidth(265)
+		gunman = ImGui.Combo("Loadout", gunman, GunManLoadoutAg, 10)
+	end
 
-		if ImGui.Button("Set Loadout") then
-			ImGui.Text(gunman)
-			if gunman <= 1 then
-				stats.set_int(MPX() .. "H3OPT_CREWWEAP", 1)
-				stats.set_int(MPX() .. "H3OPT_WEAPS", gunman)
-			elseif gunman <= 4 then
-				stats.set_int(MPX() .. "H3OPT_CREWWEAP", 3)
-				stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 2)
-			elseif gunman <= 6 then
-				stats.set_int(MPX() .. "H3OPT_CREWWEAP", 5)
-				stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 4)
-			elseif gunman <= 8 then
-				stats.set_int(MPX() .. "H3OPT_CREWWEAP", 2)
-				stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 6)
-			elseif gunman <= 10 then
-				stats.set_int(MPX() .. "H3OPT_CREWWEAP", 4)
-				stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 8)
-			end
-		end
-		ImGui.Separator()
-		ImGui.Text("Getaway Vehicles")
-		ImGui.SetNextItemWidth(265)
-		driver = ImGui.Combo("", driver, DriverLoad, 20)
-		if ImGui.Button("Set Getaway Vehicle") then
-			ImGui.Text(driver)
-			if driver <= 3 then
-				stats.set_int(MPX() .. "H3OPT_CREWDRIVER",1)
-				stats.set_int(MPX() .. "H3OPT_VEHS", driver)
-			elseif driver <= 7 then
-				stats.set_int(MPX() .. "H3OPT_CREWDRIVER",4)
-				stats.set_int(MPX() .. "H3OPT_VEHS", driver- 4)
-			elseif driver <= 11 then
-				stats.set_int(MPX() .. "H3OPT_CREWDRIVER",2)
-				stats.set_int(MPX() .. "H3OPT_VEHS", driver - 8)
-			elseif driver <= 15 then
-				stats.set_int(MPX() .. "H3OPT_CREWDRIVER",3)
-				stats.set_int(MPX() .. "H3OPT_VEHS", driver - 12)
-			elseif driver <= 19 then
-				stats.set_int(MPX() .. "H3OPT_CREWDRIVER",5)
-				stats.set_int(MPX() .. "H3OPT_VEHS", driver - 16)
-			end
-		end
-		ImGui.Separator()
-		ImGui.Text("Hacker")
-		ImGui.SetNextItemWidth(265)
-		hacker = ImGui.Combo("Hacker", hacker, hackerLoad, 6)
-		if ImGui.Button("Set Hacker") then
-			ImGui.Text(hacker)
-			stats.set_int(MPX() .. "H3OPT_CREWHACKER", hacker)
-		end
-		ImGui.Separator()
-		ImGui.Text("Mask")
-		ImGui.SetNextItemWidth(265)
-		ImGui.SetNextItemWidth(265)
-		mask = ImGui.Combo("Masks", mask, maskLoad, 13)
-		if ImGui.Button("Set Mask") then
-			ImGui.Text(mask)
-			stats.set_int(MPX() .. "H3OPT_MASKS", mask)
-		end
-		ImGui.Separator()
-		if ImGui.Button("Complete preps") then
-			CasinoCompletePreps()
-		end
-		ImGui.Separator()
-		ImGui.Text("Cuts")
-		ImGui.Text("Preset Cut")
-		if ImGui.Button("Set Cut to 100") then
-			CutsPresetter(DCCg1, DCCg4, 100)
-		end
-		casinoPc1 = ImGui.InputInt("Player Cut 1", casinoPc1)
-		casinoPc2 = ImGui.InputInt("Player Cut 2", casinoPc2)
-		casinoPc3 = ImGui.InputInt("Player Cut 3", casinoPc3)
-		casinoPc4 = ImGui.InputInt("Player Cut 4", casinoPc4)
-		if ImGui.Button("Set Player Cuts") then
-			globals.set_int(DCCg1, casinoPc1)
-			globals.set_int(DCCg2, casinoPc2)
-			globals.set_int(DCCg3, casinoPc3)
-			globals.set_int(DCCg4, casinoPc4)
+	if ImGui.Button("Set Loadout") then
+		ImGui.Text(gunman)
+		if gunman <= 1 then
+			stats.set_int(MPX() .. "H3OPT_CREWWEAP", 1)
+			stats.set_int(MPX() .. "H3OPT_WEAPS", gunman)
+		elseif gunman <= 4 then
+			stats.set_int(MPX() .. "H3OPT_CREWWEAP", 3)
+			stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 2)
+		elseif gunman <= 6 then
+			stats.set_int(MPX() .. "H3OPT_CREWWEAP", 5)
+			stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 4)
+		elseif gunman <= 8 then
+			stats.set_int(MPX() .. "H3OPT_CREWWEAP", 2)
+			stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 6)
+		elseif gunman <= 10 then
+			stats.set_int(MPX() .. "H3OPT_CREWWEAP", 4)
+			stats.set_int(MPX() .. "H3OPT_WEAPS", gunman - 8)
 		end
 	end
-	
-)
-CasinoHeist:add_separator()
-CasinoHeist:add_button("Reload Planning Screen",
-function ()
+	ImGui.Separator()
+	ImGui.Text("Getaway Vehicles")
+	ImGui.SetNextItemWidth(265)
+	driver = ImGui.Combo("", driver, DriverLoad, 20)
+	if ImGui.Button("Set Getaway Vehicle") then
+		ImGui.Text(driver)
+		if driver <= 3 then
+			stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 1)
+			stats.set_int(MPX() .. "H3OPT_VEHS", driver)
+		elseif driver <= 7 then
+			stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 4)
+			stats.set_int(MPX() .. "H3OPT_VEHS", driver - 4)
+		elseif driver <= 11 then
+			stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 2)
+			stats.set_int(MPX() .. "H3OPT_VEHS", driver - 8)
+		elseif driver <= 15 then
+			stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 3)
+			stats.set_int(MPX() .. "H3OPT_VEHS", driver - 12)
+		elseif driver <= 19 then
+			stats.set_int(MPX() .. "H3OPT_CREWDRIVER", 5)
+			stats.set_int(MPX() .. "H3OPT_VEHS", driver - 16)
+		end
+	end
+	ImGui.Separator()
+	ImGui.Text("Hacker")
+	ImGui.SetNextItemWidth(265)
+	hacker = ImGui.Combo("Hacker", hacker, hackerLoad, 6)
+	if ImGui.Button("Set Hacker") then
+		ImGui.Text(hacker)
+		stats.set_int(MPX() .. "H3OPT_CREWHACKER", hacker)
+	end
+	ImGui.Separator()
+	ImGui.Text("Mask")
+	ImGui.SetNextItemWidth(265)
+	ImGui.SetNextItemWidth(265)
+	mask = ImGui.Combo("Masks", mask, maskLoad, 13)
+	if ImGui.Button("Set Mask") then
+		ImGui.Text(mask)
+		stats.set_int(MPX() .. "H3OPT_MASKS", mask)
+	end
+	ImGui.Separator()
+	if ImGui.Button("Complete preps") then
+		CasinoCompletePreps()
+	end
+	ImGui.Separator()
+	ImGui.Text("Cuts")
+	ImGui.Text("Preset Cut")
+	if ImGui.Button("Set Cut to 100") then
+		CutsPresetter(DCCg1, DCCg4, 100)
+	end
+	casinoPc1 = ImGui.InputInt("Player Cut 1", casinoPc1)
+	casinoPc2 = ImGui.InputInt("Player Cut 2", casinoPc2)
+	casinoPc3 = ImGui.InputInt("Player Cut 3", casinoPc3)
+	casinoPc4 = ImGui.InputInt("Player Cut 4", casinoPc4)
+	if ImGui.Button("Set Player Cuts") then
+		globals.set_int(DCCg1, casinoPc1)
+		globals.set_int(DCCg2, casinoPc2)
+		globals.set_int(DCCg3, casinoPc3)
+		globals.set_int(DCCg4, casinoPc4)
+	end
+end)
+CasinoHeistEditorMenu:add_separator()
+CasinoHeistEditorMenu:add_button("Reload Planning Screen", function()
 	locals.set_int("gb_casino_heist_planning", DCRBl, 2)
-end
-)
-local CasinoHeistExtra = CasinoHeist:add_tab("Extras")
+end)
+
+CasinoHeistEditorMenu:add_separator()
+CasinoHeistEditorMenu:add_text("Instant Heist Passed")
+CasinoHeistEditorMenu:add_button("Instant Finish $$", function()
+    local approachType = stats.get_int(MPX() .. "H3OPT_APPROACH")
+    if approachType == 3 then
+        locals.set_int(FMC, DCXf1, 12)
+        locals.set_int(FMC, DCXf3, 80)
+        locals.set_int(FMC, DCXf4, 10000000)
+        locals.set_int(FMC, DCXf5, 99999)
+        locals.set_int(FMC, DCXf6, 99999)
+        gui.show_message("Instant Heist Passed", "Activated")
+    else    
+        locals.set_int(FMC, DCXf2, 12)
+        locals.set_int(FMC, DCXf3, 80)
+        locals.set_int(FMC, DCXf4, 10000000)
+        locals.set_int(FMC, DCXf5, 99999)
+        locals.set_int(FMC, DCXf6, 99999)
+        gui.show_message("Instant Heist Passed", "Activated")
+    end
+end)
+
+local CasinoHeistExtra = CasinoHeistEditorMenu:add_tab("Extras")
 CasinoHeistExtra:add_text("Make Lester, Driver, Hacker, and Gunman cut to 0%")
-CasinoHeistExtra:add_button("Make Fees to 0",
-function ()
+CasinoHeistExtra:add_button("Make Fees to 0", function()
 	globals.set_int(DCCgun, 0)
 	globals.set_int(DCCh, 0)
 	globals.set_int(DCCl, 0)
 	globals.set_int(DCCd, 0)
-end
-)
+end)
 CasinoHeistExtra:add_text("Hacks")
-CasinoHeistExtra:add_button("Bypass Casino Fingerprint Hack",
-function ()
-	if locals.get_int("fm_mission_controller",DCFHl) == 4 then
-		locals.set_int("fm_mission_controller",DCFHl, 5)
-	end
-end
-)
-CasinoHeistExtra:add_sameline()
-CasinoHeistExtra:add_button("Bypass Keypad Hack",
-function ()
-	if locals.get_int("fm_mission_controller",DCKHl) ~= 4 then
-		locals.set_int("fm_mission_controller",DCKHl, 5)
-	end
-end
-)
-CasinoHeistExtra:add_sameline()
-CasinoHeistExtra:add_button("Bypass Drill Vault Door",
-function ()
-	locals.set_int("fm_mission_controller",DCDVDl1, locals.get_int("fm_mission_controller",DCDVDl2))
-end
-)
-CasinoHeistExtra:add_button("Play the Heist Solo",
-function()
-	if locals.get_int("fmmc_launcher", 19709 + 34) ~= nil then
-		if locals.get_int("fmmc_launcher", 19709 + 34) ~= 0 then
-			if locals.get_int("fmmc_launcher", 19709 + 34) > 1 then
-					locals.set_int("fmmc_launcher", 19709 + 15, 1)
-                    globals.set_int(794744 + 4 + 1 + (locals.get_int("fmmc_launcher", 19709 + 34) * 89) + 69, 1)
-			end
-			globals.set_int(4718592 + 3526, 1)
-            globals.set_int(4718592 + 3527, 1)
-            globals.set_int(4718592 + 3529 + 1, 1)
-            globals.set_int(4718592 + 178821 + 1, 0)
-		end
+CasinoHeistExtra:add_button("Bypass Casino Fingerprint Hack", function()
+	if locals.get_int(FMC, DCFHl) == 4 then
+		locals.set_int(FMC, DCFHl, 5)
 	end
 end)
 CasinoHeistExtra:add_sameline()
-
-
-
--- Cayo Heist --
-
-local cayoPrimaryTargets = {
-	{name="Panther Statue", id = 5},
-	{name="Medrazo Files", id = 4},
-	{name="Diamond", id = 3},
-	{name="Bonds", id = 2},
-	{name="Necklace", id = 1},
-	{name="Tequila", id = 0}
-}
-
-local function CayoCompletePreps()
-	stats.set_int(MPX() .. "H4CNF_UNIFORM", -1)
-	stats.set_int(MPX() .. "H4CNF_GRAPPEL", -1)
-	stats.set_int(MPX() .. "H4CNF_TROJAN", 5)
-	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
-	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
-	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
-	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 10)
-	stats.set_int(MPX() .. "H4CNF_BS_GEN", -1)
-	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
-	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
-	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
-end
-local function CayoTargetsSetter(cash, weed, coke, gold, where, target, value)
-	stats.set_int(MPX() .. "H4LOOT_CASH_" .. where, cash)
-	stats.set_int(MPX() .. "H4LOOT_CASH_" .. where .. "_SCOPED", cash)
-	stats.set_int(MPX() .. "H4LOOT_WEED_" .. where, weed)
-	stats.set_int(MPX() .. "H4LOOT_WEED_" .. where .. "_SCOPED", weed)
-	stats.set_int(MPX() .. "H4LOOT_COKE_" .. where, coke)
-	stats.set_int(MPX() .. "H4LOOT_COKE_" .. where .. "_SCOPED", coke)
-	stats.set_int(MPX() .. "H4LOOT_GOLD_" .. where, gold)
-	stats.set_int(MPX() .. "H4LOOT_GOLD_" .. where .. "_SCOPED", gold)
-	stats.set_int(MPX() .. "H4LOOT_" .. target .. "_V", value)
-end
-local function CayoPaintingsToggler(Enabled)
-	if Enabled then
-		stats.set_int(MPX() .. "H4LOOT_PAINT", 127)
-		stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 127)
-		stats.set_int(MPX() .. "H4LOOT_PAINT_V", 189500)
-	else
-		stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
-		stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+CasinoHeistExtra:add_button("Bypass Keypad Hack", function()
+	if locals.get_int(FMC, DCKHl) ~= 4 then
+		locals.set_int(FMC, DCKHl, 5)
 	end
-end
-local function CutsPresetter(global_start, global_finish, cut)
-	globals.set_int(GCg, cut)
-	for i = global_start, global_finish do
-		globals.set_int(i, cut)
-	end
-end
-local cayoSecondaryTargets = {
-		{ name = "Gold", caps="GOLD", amount={
-			compound ={
-				cash=0, weed=0, coke=0, gold=255
-			},
-			island = {
-				cash=0, weed=0, coke=0, gold=16777215
-			}
-		}, value = 330350},
-		{ name = "Cocaine", caps="COKE",amount={
-			compound ={
-				cash=0, weed=0, coke=255, gold=0
-			},
-			island = {
-				cash=0, weed=0, coke=16777215, gold=0
-		}, value = 200095},
-		{ name = "Meraguina", caps="WEED",amount={
-			compound ={
-				cash=0, weed=255, coke=0, gold=0
-			},
-			island = {
-				cash=0, weed=16777215, coke=0, gold=0
-				}
-		}, value = 147870},
-		{ name = "Cash", caps="CASH",amount={
-			compound ={
-				cash=255, weed=0, coke=0, gold=0
-			},
-			island = {
-				cash=16777215, weed=0, coke=0, gold=0
-			}
-		}, value = 90000}
-	}
-}
-
-local cayoLocations = {
-	{name="Front Gate", x=4990.0386, y=-5717.6895, z=19.876024},
-	{name="El Rubio's Office", x=5010.12, y=-5750.1353, z=28.844675},
-	{name="Primary Target", x=5006.7, y=-5756.2, z=15.483983},
-	{name="Secondary Target", x=4999.764160, y=-5749.863770, z=14.840000},
-	{name="Safe Zone", x=4771.479, y=-6165.737, z=-39.079613},
-	{name="Entrance Drinage Pipe", x=5043.74, y=-5815.3193, z=-10.574497},
-	{name="Enter Cayo Perico", x=5053.8516, y=-5772.852, z=-4.1588774},
-	{name="Elevator", x=5012.1533, y=-5749.0107, z=28.945145},
-}
-local cayoApproachVehicles = {
-	{name="Longfin", id = 65345},
-	{name="Patrol Boat", id = 65313},
-	{name="Stealth Annihilator", id = 65425},
-	{name="Velum", id = 65289},
-	{name="Alkonost", id = 65413},
-	{name="Kosatka", id = 65283},
-}
-local cayoWeapons = {
-	{name="Aggressor", id = 1},
-	{name="Conspirator", id = 2},
-	{name="Crackshot", id = 3},
-	{name="Saboteur", id = 4},
-	{name="Marksman", id = 5},
-}
-local Cayo = Heist_Editor:add_tab("Cayo Perico Heist By GSXR")
-
-Cayo:add_text("Cayo Bag Size Editor")
-local cayobag = Cayo:add_input_int("Bag Size")
-Cayo:add_button("Set Bag Size", 
-function ()
-	globals.set_int(CPBg, cayobag:get_value())
-	gui.show_message("YOUR CAYO BAG SIZE HAS BEEN SET TO THE VALUE "..cayobag:get_value().." SUCCESSFULLY", "THANK YOU FOR USING THIS OPTION ツ MADE WITH <3 BY Someone")
+end)
+CasinoHeistExtra:add_sameline()
+CasinoHeistExtra:add_button("Bypass Drill Vault Door", function()
+	locals.set_int(FMC, DCDVDl1, locals.get_int(FMC, DCDVDl2))
 end)
 
-Cayo:add_separator()
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+local CayoHeistEditorMenu = HeistsDataEditorMenu:add_tab("Cayo Perico Editor")
 
-Cayo:add_text("Primary Target")
-for _, cayoPrimaryTarget in ipairs(cayoPrimaryTargets) do
-	Cayo:add_button(cayoPrimaryTarget.name,
-	function ()
-		stats.set_int(MPX() .. "H4CNF_TARGET", cayoPrimaryTarget.id)
-	end)
-	Cayo:add_sameline()
-end
-Cayo:add_separator()
-Cayo:add_text("Secondary targets")
-Cayo:add_text("Compound:")
-for _, cayoSecondaryTarget in ipairs(cayoSecondaryTargets) do
-	Cayo:add_button(cayoSecondaryTarget.name,
-	function ()
-		CayoTargetsSetter(cayoSecondaryTarget.amount.compound.cash, cayoSecondaryTarget.amount.compound.weed, cayoSecondaryTarget.amount.compound.coke, cayoSecondaryTarget.amount.compound.gold, "C", cayoSecondaryTarget.caps, cayoSecondaryTarget.value)
-	
-	end)
-	Cayo:add_sameline()
-end
-Cayo:add_text("")
-Cayo:add_text("Island (Buggy!)")
-for _, cayoSecondaryTarget in ipairs(cayoSecondaryTargets) do
-	Cayo:add_button(cayoSecondaryTarget.name,
-	function ()
-		CayoTargetsSetter(cayoSecondaryTarget.amount.island.cash, cayoSecondaryTarget.amount.island.weed, cayoSecondaryTarget.amount.island.coke, cayoSecondaryTarget.amount.island.gold, "I", cayoSecondaryTarget.caps, cayoSecondaryTarget.value)
-	end)
-end
-Cayo:add_text("")
-Cayo:add_text("Add Paintings")
-local addPaintings = Cayo:add_checkbox("Paintings")
-Cayo:add_separator()
-Cayo:add_text("Difficulty")
-Cayo:add_button("Hard",
-function ()
-	stats.set_int(MPX() .. "H4_PROGRESS", 131055)
-end
-)
-Cayo:add_sameline()
-Cayo:add_button("Normal",
-function ()
-	stats.set_int(MPX() .. "H4_PROGRESS", 126823)
-end
-)
-Cayo:add_separator()
-Cayo:add_text("Approach")
-for _, cayoApproachVehicle in ipairs(cayoApproachVehicles) do
-	Cayo:add_button(cayoApproachVehicle.name,
-	function ()
-		stats.set_int(MPX() .. "H4_MISSIONS", cayoApproachVehicle.id)
-	end)
-	Cayo:add_sameline()
-end
-Cayo:add_separator()
-Cayo:add_text("Weapons")
-for _, cayoWeapon in ipairs(cayoWeapons) do
-	Cayo:add_button(cayoWeapon.name,
-	function ()
-		stats.set_int(MPX() .. "H4CNF_WEAPONS", cayoWeapon.id)
-	end)
-	Cayo:add_sameline()
-end
-Cayo:add_separator()
-Cayo:add_button("Complete Preps",
-function ()
-	CayoPaintingsToggler(addPaintings:is_enabled())
-	CayoCompletePreps()
-	locals.set_int("heist_island_planning", CPRSl, 2)
-end
-)
-Cayo:add_separator()
-Cayo:add_text("Cuts to All")
-Cayo:add_button("100",
-function ()
+CayoHeistEditorMenu:add_text("Cuts to All")
+CayoHeistEditorMenu:add_button("100", function()
 	CutsPresetter(CPCg1, CPCg4, 100)
-end
-)
-Cayo:add_text("")
-Cayo:add_text("Custom Cut")
-local cayocut1 = Cayo:add_input_int("Cut 1")
-local cayocut2 = Cayo:add_input_int("Cut 2")
-local cayocut3 = Cayo:add_input_int("Cut 3")
-local cayocut4 = Cayo:add_input_int("Cut 4")
-Cayo:add_button("Set",
-function ()
+end)
+CayoHeistEditorMenu:add_text("")
+CayoHeistEditorMenu:add_text("Custom Cut")
+local cayocut1 = CayoHeistEditorMenu:add_input_int("Cut 1")
+local cayocut2 = CayoHeistEditorMenu:add_input_int("Cut 2")
+local cayocut3 = CayoHeistEditorMenu:add_input_int("Cut 3")
+local cayocut4 = CayoHeistEditorMenu:add_input_int("Cut 4")
+CayoHeistEditorMenu:add_button("Set", function()
 	globals.set_int(CPCg1, cayocut1:get_value())
 	globals.set_int(CPCg2, cayocut2:get_value())
 	globals.set_int(CPCg3, cayocut3:get_value())
 	globals.set_int(CPCg4, cayocut4:get_value())
 end)
-Cayo:add_separator()
-Cayo:add_text("Reload Planing Screen")
-Cayo:add_button("Reload Planing Screen",
-function ()
-	locals.set_int("heist_island_planning", CPRSl, 2)
-end
+CayoHeistEditorMenu:add_separator()
+
+CayoHeistEditorMenu:add_text("Non-Legit Presets")
+
+CayoHeistEditorMenu:add_button("Panther/Gold (Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 5)
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 1191817)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Panther Hard Mode has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Diamond/Gold (Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 3)
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 1191817)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Diamond Hard Mode has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Bonds/Gold (Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 2)
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 1191817)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Bonds Hard Mode has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Necklace/Gold (Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 1)
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 1191817)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Necklace Hard Mode has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Tequila/Gold (Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 0)
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055)
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 1191817)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Tequila Hard Mode has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text("Legit Presets")
+
+CayoHeistEditorMenu:add_button("Panther/Gold (L. Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 5) --Primary Target Values: 0. Tequila, 1. Necklace, 2. Bonds, 3. Diamond, 4. Medrazo Files, 5. Panther
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	-- Island Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+
+	-- Compound Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055) -- 131055 // Hard Mode  -  130667 // Solo Normal??
+
+	-- These are what is set when you find loot throughout the island/compound
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+
+	-- Payout Values // Set to "Normal" values.  Each value is multiplied by 8, bc there are 8 locations for them.
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 45375)
+	globals.set_int(PSV, 1900000) -- Panther Value -- 1900000 shows as 2,090,000 in-game on the board. 190,000 difference.
+
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Panther Hard Mode (Legit) has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+
+CayoHeistEditorMenu:add_button("Diamond/Gold (L. Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 3) --Primary Target Values: 0. Tequila, 1. Necklace, 2. Bonds, 3. Diamond, 4. Medrazo Files, 5. Panther
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	-- Island Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+
+	-- Compound Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055) -- 131055 // Hard Mode  -  130667 // Solo Normal??
+
+	-- These are what is set when you find loot throughout the island/compound
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+
+	-- Payout Values // Set to "Normal" values.  Each value is multiplied by 8, bc there are 8 locations for them.
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 45375)
+	globals.set_int(PDIAMOND, 1300000) -- Diamond Value  -- 1300000 shows as 1,430,000 in-game. 130,000 difference.
+
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Diamond Hard Mode (Legit) has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+
+CayoHeistEditorMenu:add_button("Bonds/Gold (L. Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 2) --Primary Target Values: 0. Tequila, 1. Necklace, 2. Bonds, 3. Diamond, 4. Medrazo Files, 5. Panther
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	-- Island Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+
+	-- Compound Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055) -- 131055 // Hard Mode  -  130667 // Solo Normal??
+
+	-- These are what is set when you find loot throughout the island/compound
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+
+	-- Payout Values // Set to "Normal" values.  Each value is multiplied by 8, bc there are 8 locations for them.
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 45375)
+	globals.set_int(BB, 770000) -- Bonds Value -- 770000 shows as 847,000 in-game.  77,000 difference.
+
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Bonds Hard Mode (Legit) has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+
+CayoHeistEditorMenu:add_button("Necklace/Gold (L. Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 1) --Primary Target Values: 0. Tequila, 1. Necklace, 2. Bonds, 3. Diamond, 4. Medrazo Files, 5. Panther
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	-- Island Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+
+	-- Compound Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055) -- 131055 // Hard Mode  -  130667 // Solo Normal??
+
+	-- These are what is set when you find loot throughout the island/compound
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+
+	-- Payout Values // Set to "Normal" values.  Each value is multiplied by 8, bc there are 8 locations for them.
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 45375)
+	globals.set_int(RN, 700000) -- Necklace Value -- 700000 shows as 770,000 in-game. 70,000 difference.
+
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Necklace Hard Mode (Legit) has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+
+CayoHeistEditorMenu:add_button("Tequila/Gold (L. Hard)", function()
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 131071)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 63)
+	stats.set_int(MPX() .. "H4CNF_BS_ABIL", 63)
+	stats.set_int(MPX() .. "H4CNF_WEAPONS", 5)
+	stats.set_int(MPX() .. "H4CNF_WEP_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_ARM_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_HEL_DISRP", 3)
+	stats.set_int(MPX() .. "H4CNF_TARGET", 0) --Primary Target Values: 0. Tequila, 1. Necklace, 2. Bonds, 3. Diamond, 4. Medrazo Files, 5. Panther
+	stats.set_int(MPX() .. "H4CNF_TROJAN", 2)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", -1)
+	-- Island Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I", 0)
+
+	-- Compound Loot // -1 shows all, 0 shows none
+	stats.set_int(MPX() .. "H4LOOT_CASH_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 131055) -- 131055 // Hard Mode  -  130667 // Solo Normal??
+
+	-- These are what is set when you find loot throughout the island/compound
+	stats.set_int(MPX() .. "H4LOOT_CASH_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_CASH_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_WEED_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_COKE_C_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_I_SCOPED", 0)
+	stats.set_int(MPX() .. "H4LOOT_GOLD_C_SCOPED", -1)
+	stats.set_int(MPX() .. "H4LOOT_PAINT_SCOPED", 0)
+
+	-- Payout Values // Set to "Normal" values.  Each value is multiplied by 8, bc there are 8 locations for them.
+	stats.set_int(MPX() .. "H4LOOT_GOLD_V", 45375)
+	globals.set_int(TEQUILA, 693000) -- Tequila Value -- 630000 shows as 693,000. 63,000 difference.
+
+	stats.set_int(MPX() .. "H4_MISSIONS", 65535)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 32)
+
+	gui.show_message("Cayo Heist", "Tequila Hard Mode (Legit) has been set up!")
+	gui.show_message("Cayo Heist", "Reset the board to see the changes")
+end)
+
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text("Reset Presets Completely")
+CayoHeistEditorMenu:add_button("Reset Heist Completely", function()
+	stats.set_int(MPX() .. "H4_MISSIONS", 0)
+	stats.set_int(MPX() .. "H4_PROGRESS", 0)
+	stats.set_int(MPX() .. "H4_PLAYTHROUGH_STATUS", 0)
+	stats.set_int(MPX() .. "H4CNF_APPROACH", 0)
+	stats.set_int(MPX() .. "H4CNF_BS_ENTR", 0)
+	stats.set_int(MPX() .. "H4CNF_BS_GEN", 0)
+end)
+
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text(
+	"Press this after clicking one of the above presets or after the reset heist Completely Option"
 )
-Cayo:add_separator()
-Cayo:add_text("Extras")
-Cayo:add_button("Bypass Drainge Cut",
-function ()
-	locals.set_int("fm_mission_controller_2020", CPSTCl, 6)
-end
-)
-Cayo:add_sameline()
-Cayo:add_button("Bypass Fingerprint Scanner",
-function ()
-	locals.set_int("fm_mission_controller_2020", CPFHl, 5)
-end
-)
-Cayo:add_sameline()
-Cayo:add_button("Bypass Plasma Cutter",
-function ()
-	locals.set_float("fm_mission_controller_2020", CPPCCl, 100.0)
-end
-)
-Cayo:add_sameline()
-Cayo:add_button("Remove All CCTV's",
-function ()
+CayoHeistEditorMenu:add_button("Reset Kosatka Board", function()
+	locals.set_int(HIP, CPRSl, 2)
+	gui.show_message("Cayo Heist", "Planning board has been reset!")
+end)
+
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text("During Heist")
+CayoHeistEditorMenu:add_button("Skip Drainage Cut", function()
+	locals.set_int(FMC2020, CPSTCl, 6)
+	gui.show_message("Cayo Heist", "Bypassed Drainage Cut")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Skip Fingerprint Scanner", function()
+	locals.set_int(FMC2020, CPFHl, 5)
+	gui.show_message("Cayo Heist", "Bypassed Fingerprint Scanner")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Skip Glass Cut", function()
+	locals.set_float(FMC2020, CPPCCl, 100.0)
+	gui.show_message("Cayo Heist", "Bypassed Plasma Cutter")
+end)
+
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Remove All CCTV's", function()
 	for _, ent in pairs(entities.get_all_objects_as_handles()) do
 		for __, cam in pairs(CamList) do
 			if ENTITY.GET_ENTITY_MODEL(ent) == cam then
@@ -1105,159 +1166,282 @@ function ()
 			end
 		end
 	end
-end
-)
+end)
 CamList = {
-	joaat("prop_cctv_cam_01a"), joaat("prop_cctv_cam_01b"), joaat("prop_cctv_cam_02a"), joaat("prop_cctv_cam_03a"),
-	joaat("prop_cctv_cam_04a"), joaat("prop_cctv_cam_04c"), joaat("prop_cctv_cam_05a"), joaat("prop_cctv_cam_06a"),
-	joaat("prop_cctv_cam_07a"), joaat("prop_cs_cctv"), joaat("p_cctv_s"), joaat("hei_prop_bank_cctv_01"),
-	joaat("hei_prop_bank_cctv_02"), joaat("ch_prop_ch_cctv_cam_02a"), joaat("xm_prop_x17_server_farm_cctv_01"),
+	joaat("prop_cctv_cam_01a"),
+	joaat("prop_cctv_cam_01b"),
+	joaat("prop_cctv_cam_02a"),
+	joaat("prop_cctv_cam_03a"),
+	joaat("prop_cctv_cam_04a"),
+	joaat("prop_cctv_cam_04c"),
+	joaat("prop_cctv_cam_05a"),
+	joaat("prop_cctv_cam_06a"),
+	joaat("prop_cctv_cam_07a"),
+	joaat("prop_cs_cctv"),
+	joaat("p_cctv_s"),
+	joaat("hei_prop_bank_cctv_01"),
+	joaat("hei_prop_bank_cctv_02"),
+	joaat("ch_prop_ch_cctv_cam_02a"),
+	joaat("xm_prop_x17_server_farm_cctv_01"),
 }
 
-Cayo:add_separator()
-Cayo:add_text("Teleports")
-for _, location in ipairs(cayoLocations) do
-	Cayo:add_button(location.name,
-	function ()
-		local ped = PLAYER.PLAYER_PED_ID()
-        PED.SET_PED_COORDS_KEEP_VEHICLE(ped, location.x, location.y, location.z)
-	end)
-	Cayo:add_sameline()
-end
-
--- Apartment Heist --
-
-local Apartment = Heist_Editor:add_tab("Apartment Heist By GSXR")
-Apartment:add_text("Preps")
-Apartment:add_button("Complete Preps", 
-function ()
-	stats.set_int(MPX() .. "HEIST_PLANNING_STAGE", -1)
-end)
-Apartment:add_sameline()
-Apartment:add_button("Reset Preps", function()
-	STATS.STAT_SET_INT(MPX() .. "HEIST_PLANNING_STAGE", 0)
-end)
-Apartment:add_text("")
-Apartment:add_text("For Fleeca:")
-Apartment:add_text("Pay for the preparation, start the first mission and as soon as you are sent to scout\nchange the session, come back to planning room, press \"Complete Preps\" near white board and press \"E\"")
-Apartment:add_text("For Other Heist:")
-Apartment:add_text("Start the mission and leave after the 1st cutscene ends, press \"Complete Preps\" near white board and press \"E\"")
-Apartment:add_separator()
-local remCD = Apartment:add_checkbox("Remove Cooldown")
-script.register_looped("removeCool", function(remt)
-    remt:yield()
-    if remCD:is_enabled() == true then
-		globals.set_int(1877285 + 1 + (PLAYER.PLAYER_ID() * 77) + 76, -1)
-		remt:sleep(500)
-	end
-end)
-
-local heistCuts = {
-    [1328892776] = {-14806, 7453},
-    [964111671] =  {-4184, 2142},
-    [1131632450] = {-3074, 1587},
-    [1967927346] = {-4100, 2100},
-    [1182286714] = {-1900, 1000}
-}
-
-Apartment:add_button("15mil Payout By GSXR Currently Patched",
-function()
-script.run_in_fiber(function(ap)
-	local key = globals.get_int(1877285 + (PLAYER.PLAYER_ID() * 77) + 24 + 2)
-	local cuts = heistCuts[key]
-	globals.set_int(ACg1, 100 - (cuts[2]*locals.get_int("fmmc_launcher", 19709 + 34)))
-	globals.set_int(ACg2, cuts[2])
-	if key ~= 1328892776 then
-		globals.set_int(ACg3, cuts[2])
-		globals.set_int(ACg4, cuts[2])
-	end
-    PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
-	ap:sleep(1000)
-    PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 202, 1)
-	ap:sleep(1000)
-	globals.set_int(ACg5, -1 * (-100 + cuts[1]) / 2)
-end)
-end)
-
-
-
-local apartCut1 = 0
-local apartCut2 = 0
-local apartCut3 = 0
-local apartCut4 = 0
-Apartment:add_imgui(
-	function ()
-		PAD.DISABLE_CONTROL_ACTION(2, 237, true)
-		ImGui.Text("Custom Cuts:")
-		ImGui.SetNextItemWidth(150)
-		apartCut1 = ImGui.InputInt("Cut 1", apartCut1)
-		ImGui.SameLine()
-		ImGui.SetNextItemWidth(150)
-		apartCut2 = ImGui.InputInt("Cut 2", apartCut2)
-		ImGui.SetNextItemWidth(150)
-		apartCut3 = ImGui.InputInt("Cut 3", apartCut3)
-		ImGui.SameLine()
-		ImGui.SetNextItemWidth(150)
-		apartCut4 = ImGui.InputInt("Cut 4", apartCut4)
-		if ImGui.Button("Set Cuts") then
-			script.run_in_fiber(function(ccut)
-			globals.set_int(ACg1, 100 - (apartCut1 * locals.get_int("fmmc_launcher", 19709 + 34)))
-			globals.set_int(ACg2, apartCut2)
-			globals.set_int(ACg3, apartCut3)
-			globals.set_int(ACg4, apartCut4)
-			PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 201, 1)
-			ccut:sleep(1000)
-    		PAD.SET_CONTROL_VALUE_NEXT_FRAME(2, 202, 1)
-			ccut:sleep(1000)
-			globals.set_int(ACg5, -1 * (-100 + globals.get_int(ACg1)) / 2)
-		end)
-	end
-	end
-)
-Apartment:add_separator()
-
-Apartment:add_text("Extras")
-Apartment:add_button("Bypass Fleeca Hack",
-function ()
-	locals.set_int("fm_mission_controller", AFHl, 7)
-end
-)
-Apartment:add_sameline()
-Apartment:add_button("Bypass Fleeca Drill",
-function ()
-	locals.set_float("fm_mission_controller", AFDl, 100)
-end
-)
-Apartment:add_sameline()
-Apartment:add_button("Unlock All Heists",
-function ()
-	globals.set_int(1877285 + 1 + (PLAYER.PLAYER_ID() * 77 + 1) + 76, 31)
-end
-)
-Apartment:add_sameline()
-Apartment:add_button("Instant Finish",
-function()
-	locals.set_int("fm_mission_controller", AIFl3, 12)
-	locals.set_int("fm_mission_controller", AIFl4, 99999)
-	locals.set_int("fm_mission_controller", AIFl5, 99999)
-end
-)
-Apartment:add_button("Play the Heist Solo",
-function()
-	if locals.get_int("fmmc_launcher", 19709 + 34) ~= nil then
-		if locals.get_int("fmmc_launcher", 19709 + 34) ~= 0 then
-			if locals.get_int("fmmc_launcher", 19709 + 34) > 1 then
-					locals.set_int("fmmc_launcher", 19709 + 15, 1)
-                    globals.set_int(794744 + 4 + 1 + (locals.get_int("fmmc_launcher", 19709 + 34) * 89) + 69, 1)
-			end
-			globals.set_int(4718592 + 3526, 1)
-            globals.set_int(4718592 + 3527, 1)
-            globals.set_int(4718592 + 3529 + 1, 1)
-            globals.set_int(4718592 + 178821 + 1, 0)
+CayoHeistEditorMenu:add_sameline()
+CayoHeistEditorMenu:add_button("Delete Mission NPC's", function() -- Thanks to RazorGamerX for the help on this
+	for index, ped in ipairs(entities.get_all_peds_as_handles()) do
+		local model = ENTITY.GET_ENTITY_MODEL(ped)
+		if model == 0x7ED5AD78 or model == 0x6C8C08E5 or model == 0x995B3F9F or model == 0xB881AEE then
+			ENTITY.SET_ENTITY_AS_MISSION_ENTITY(ped, true, true)
+			PED.DELETE_PED(ped)
 		end
 	end
 end)
-Apartment:add_text("")
-Apartment:add_text("Note: After Clicking Unlock All Heists, restart the game to ensure no bugs happen -GSXRBRAH")
+
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text("After Heist")
+CayoHeistEditorMenu:add_button("Skip Cooldown", function()
+	-- Solo Skip
+	stats.set_int("MP0_H4_TARGET_POSIX", 1659643454)
+	stats.set_int("MP0_H4_COOLDOWN", 0)
+	stats.set_int("MP0_H4_COOLDOWN_HARD", 0)
+	-- Multiplayer Skip
+	stats.set_int("MP0_H4_TARGET_POSIX", 1659429119)
+	stats.set_int("MP0_H4_COOLDOWN", 0)
+	stats.set_int("MP0_H4_COOLDOWN_HARD", 0)
+	-- Solo Skip (Second Character)
+	stats.set_int("MP1_H4_TARGET_POSIX", 1659643454)
+	stats.set_int("MP1_H4_COOLDOWN", 0)
+	stats.set_int("MP1_H4_COOLDOWN_HARD", 0)
+	-- Multiplayer Skip (Second Character)
+	stats.set_int("MP1_H4_TARGET_POSIX", 1659429119)
+	stats.set_int("MP1_H4_COOLDOWN", 0)
+	stats.set_int("MP1_H4_COOLDOWN_HARD", 0)
+
+	gui.show_message("Cayo Heist", "Skipped Cayo Perico Cooldown for all characters")
+	gui.show_message("Cayo Heist", "Go to story mode and come back to apply the reset")
+end)
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text("How to Set Up or Bypass Cooldown:")
+CayoHeistEditorMenu:add_text(
+	"Make sure you have completed the heist and you are standing in front of the planning screen"
+)
+CayoHeistEditorMenu:add_text("Click Skip Cooldown, then click on your Preset and click Reset Kosatka Board")
+
+CayoHeistEditorMenu:add_separator()
+CayoHeistEditorMenu:add_text("Instant Heist Passed")
+CayoHeistEditorMenu:add_button("Instant Finish $$", function()
+	locals.set_int(FMC2020, IHPB, 9)
+	locals.set_int(FMC2020, IHPL, 50)
+	gui.show_message("Instant Heist Passed", "Activated")
+end)
+
+-- Cayo Bag Size & Value Editor
+local cayoSizeEditor = CayoHeistEditorMenu:add_tab("Size/Value Editor")
+cayoSizeEditor:add_text("Bag Size Editor")
+bagSizeVal = 1800
+cayoSizeEditor:add_imgui(function()
+	bagSizeVal, used = ImGui.SliderInt("Bag Size", bagSizeVal, 1800, 7200) -- 7200 = 4 players, this works if you want more money solo and it adjusts so you can always have full bags
+	if used then
+		globals.set_int(BAS1, bagSizeVal)
+		gui.show_message("Bag Size Modified!")
+	end
+end)
+
+cayoSizeEditor:add_text("Custom Bag Size Editor")
+custombagSizeVal = 1800
+cayoSizeEditor:add_imgui(function()
+	custombagSizeVal, used = ImGui.SliderInt("Custom Bag Size", custombagSizeVal, 1800, 2147483646)
+	if used then
+		globals.set_int(BAS1, custombagSizeVal)
+		gui.show_message("Custom Bag Size Modified!")
+	end
+end)
+
+cayoSizeEditor:add_separator()
+cayoSizeEditor:add_text("Primary Target Editors")
+pantherSizeVal = 1900000
+cayoSizeEditor:add_imgui(function()
+	pantherSizeVal, used = ImGui.SliderInt("Panther Value", pantherSizeVal, 1900000, 3800000) -- Double the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		globals.set_int(PSV, pantherSizeVal)
+		gui.show_message("Panther Value Modified!", out)
+	end
+end)
+
+diamondSizeVal = 1300000
+cayoSizeEditor:add_imgui(function()
+	diamondSizeVal, used = ImGui.SliderInt("Diamond Value", diamondSizeVal, 1300000, 2600000) -- Double the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		globals.set_int(PDIAMOND, diamondSizeVal)
+		gui.show_message("Diamond Value Modified!", out)
+	end
+end)
+
+bondSizeVal = 770000
+cayoSizeEditor:add_imgui(function()
+	bondSizeVal, used = ImGui.SliderInt("Bonds Value", bondSizeVal, 770000, 1540000) -- Double the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		globals.set_int(BB, bondSizeVal)
+		gui.show_message("Bonds Value Modified!", out)
+	end
+end)
+
+necklaceSizeVal = 700000
+cayoSizeEditor:add_imgui(function()
+	necklaceSizeVal, used = ImGui.SliderInt("Necklace Value", necklaceSizeVal, 700000, 1400000) -- Double the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		globals.set_int(RN, necklaceSizeVal)
+		gui.show_message("Necklace Value Modified!", out)
+	end
+end)
+
+tequilaSizeVal = 693000
+cayoSizeEditor:add_imgui(function()
+	tequilaSizeVal, used = ImGui.SliderInt("Tequila Value", tequilaSizeVal, 693000, 1400000) -- Double the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		globals.set_int(TEQUILA, tequilaSizeVal)
+		gui.show_message("Tequila Value Modified!", out)
+	end
+end)
+
+cayoSizeEditor:add_separator()
+cayoSizeEditor:add_text("Secondary Target Editors")
+
+goldSizeVal = 45375
+cayoSizeEditor:add_imgui(function()
+	goldSizeVal, used = ImGui.SliderInt("Gold Value", goldSizeVal, 45375, 181500) -- Quadruple the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		stats.set_int(MPX() .. "H4LOOT_GOLD_V", goldSizeVal)
+		gui.show_message("Gold Value Modified!", out)
+	end
+end)
+
+cokeSizeVal = 25312
+cayoSizeEditor:add_imgui(function()
+	cokeSizeVal, used = ImGui.SliderInt("Coke Value", cokeSizeVal, 25312, 101248) -- Quadruple the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		stats.set_int(MPX() .. "H4LOOT_COKE_V", cokeSizeVal)
+		gui.show_message("Coke Value Modified!", out)
+	end
+end)
+
+paintSizeVal = 22500
+cayoSizeEditor:add_imgui(function()
+	paintSizeVal, used = ImGui.SliderInt("Paintings Value", paintSizeVal, 22500, 90000) -- Quadruple the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		stats.set_int(MPX() .. "H4LOOT_PAINT_V", paintSizeVal)
+		gui.show_message("Paintings Value Modified!", out)
+	end
+end)
+
+weedSizeVal = 16875
+cayoSizeEditor:add_imgui(function()
+	weedSizeVal, used = ImGui.SliderInt("Weed Value", weedSizeVal, 16875, 67500) -- Quadruple the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		stats.set_int(MPX() .. "H4LOOT_WEED_V", weedSizeVal)
+		gui.show_message("Weed Value Modified!", out)
+	end
+end)
+
+cashSizeVal = 10406
+cayoSizeEditor:add_imgui(function()
+	cashSizeVal, used = ImGui.SliderInt("Cash Value", cashSizeVal, 10406, 41624) -- Quadruple the original price
+	out = "Reset the board to see changes"
+
+	if used then
+		stats.set_int(MPX() .. "H4LOOT_WEED_V", cashSizeVal)
+		gui.show_message("Cash Value Modified!", out)
+	end
+end)
+cayoSizeEditor:add_text("These values seem incorrect, but the game reads them properly.")
+cayoSizeEditor:add_text("Minimum values are exact defaults for ALL targets.")
+cayoSizeEditor:add_separator()
+cayoSizeEditor:add_text("Press this after setting values.")
+cayoSizeEditor:add_button("Reset Kosatka Board", function()
+	locals.set_int(HIP, 1566, 2)
+	gui.show_message("Cayo Heist", "Planning board has been reset!")
+end)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+DoomsdayHeistEditorMenu = HeistsDataEditorMenu:add_tab("Doomsday Heist Editor")
+
+DoomsdayHeistEditorMenu:add_button("One Click Setup Act 1: The Data Breaches", function()
+	stats.set_int(MPX() .. "GANGOPS_FLOW_MISSION_PROG", 7)
+	stats.set_int(MPX() .. "GANGOPS_FM_MISSION_PROG", 7)
+end)
+
+DoomsdayHeistEditorMenu:add_button("One Click Setup Act 2: The Bodgan Problem", function()
+	stats.set_int(MPX() .. "GANGOPS_FLOW_MISSION_PROG", 240)
+	stats.set_int(MPX() .. "GANGOPS_FM_MISSION_PROG", 248)
+end)
+
+DoomsdayHeistEditorMenu:add_button("One Click Setup Act 3: Doomsday Scenario", function()
+	stats.set_int(MPX() .. "GANGOPS_FLOW_MISSION_PROG", 15872)
+	stats.set_int(MPX() .. "GANGOPS_FM_MISSION_PROG", 16128)
+end)
+
+DoomsdayHeistEditorMenu:add_text("Set Doomsday Heist Cuts")
+DoomsdayHeistEditorMenu:add_text("Preset Cut")
+DoomsdayHeistEditorMenu:add_button("100", function()
+	CutsPresetter(DCg1, DCg4, 100)
+end)
+DoomsdayHeistEditorMenu:add_text("Custom Cuts")
+local dmsdyCut1 = DoomsdayHeistEditorMenu:add_input_int("Cut 1")
+local dmsdyCut2 = DoomsdayHeistEditorMenu:add_input_int("Cut 2")
+local dmsdyCut3 = DoomsdayHeistEditorMenu:add_input_int("Cut 3")
+local dmsdyCut4 = DoomsdayHeistEditorMenu:add_input_int("Cut 4")
+DoomsdayHeistEditorMenu:add_button("Set Cuts", function()
+	globals.set_int(DCg1, dmsdyCut1:get_value())
+	globals.set_int(DCg2, dmsdyCut2:get_value())
+	globals.set_int(DCg3, dmsdyCut3:get_value())
+	globals.set_int(DCg4, dmsdyCut4:get_value())
+end)
+
+DoomsdayHeistEditorMenu:add_separator()
+DoomsdayHeistEditorMenu:add_text("Preps")
+DoomsdayHeistEditorMenu:add_button("Reset Preps", function()
+	DoomsdayActSetter(240, 0)
+end)
+
+DoomsdayHeistEditorMenu:add_sameline()
+DoomsdayHeistEditorMenu:add_button("Complete Preps", function()
+	stats.set_int(MPX() .. "GANGOPS_FM_MISSION_PROG", -1)
+end)
+
+DoomsdayHeistEditorMenu:add_separator()
+DoomsdayHeistEditorMenu:add_text("Bypass Doomsday Scenario hack")
+DoomsdayHeistEditorMenu:add_button("By Act III Pass hack", function()
+	locals.set_int(FMC, DDSHl, 3)
+end)
+
+DoomsdayHeistEditorMenu:add_separator()
+DoomsdayHeistEditorMenu:add_text("Instant Heist Passed")
+DoomsdayHeistEditorMenu:add_button("Instant Finish $$", function()
+	locals.set_int(FMC, 19787, 12)
+	locals.set_int(FMC, 19787 + 2686, 10000000)
+	locals.set_int(FMC, 29011 + 1, 99999)
+	locals.set_int(FMC, 31663 + 69, 99999)
+	gui.show_message("Instant Heist Passed", "Activated")
+end)
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
