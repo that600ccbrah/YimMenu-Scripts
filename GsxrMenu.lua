@@ -13541,16 +13541,15 @@ end)
 HeistsDataEditorMenu = L7NEG:add_tab("Heists Control By GSXR PORTED!")
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 ApartmentDataEditorMenu = HeistsDataEditorMenu:add_tab("Apartment Data Editor Menu")
 
-ApartmentDataEditorMenu:add_button("Skip Current Apartment Heist Preps", function()
+ApartmentDataEditorMenu:add_button("Skip Preps", function()
 	stats.set_int(MPX() .. "HEIST_PLANNING_STAGE", -1)
 end)
 
 ApartmentDataEditorMenu:add_sameline()
 
-ApartmentDataEditorMenu:add_button("Reset Current Apartment Heist Preps", function()
+ApartmentDataEditorMenu:add_button("Reset Preps", function()
 	stats.set_int(MPX() .. "HEIST_PLANNING_STAGE", 0)
 end)
 
@@ -13622,6 +13621,26 @@ ApartmentDataEditorMenu:add_button("Bypass Fleeca Drill", function()
 	locals.set_float(FMC, AFDl, 100)
 end)
 ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Skip Checkpoint", function()
+    locals.set_int(FMC, AHSo, locals.get_int(FMC, AHSo) | (1 << 17))
+end
+)
+ApartmentDataEditorMenu:add_button("Play the Heist Alone",
+function()
+	if locals.get_int(FMMCL, 19990 + 34) ~= nil then
+		if locals.get_int(FMMCL, 19990 + 34) ~= 0 then
+			if locals.get_int(FMMCL, 19990 + 34) > 1 then
+					locals.set_int(FMMCL, 19990 + 15, 1)
+                    globals.set_int(794954 + 4 + 1 + (locals.get_int(FMMCL, 19990 + 34) * 95) + 75, 1)
+			end
+			globals.set_int(4718592 + 3539, 1)
+            globals.set_int(4718592 + 3540, 1)
+            globals.set_int(4718592 + 3542 + 1, 1)
+            globals.set_int(4718592 + 184007 + 1, 0)
+		end
+	end
+end)
+ApartmentDataEditorMenu:add_sameline()
 ApartmentDataEditorMenu:add_button("Unlock All Jobs", function()
 	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_0", globals.get_int(AUAJg1))
 	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_0_L", 5)
@@ -13635,11 +13654,23 @@ ApartmentDataEditorMenu:add_button("Unlock All Jobs", function()
 	stats.set_int(MPX() .. "HEIST_SAVED_STRAND_4_L", 5)
 end)
 ApartmentDataEditorMenu:add_sameline()
-ApartmentDataEditorMenu:add_button("Instant Finish", function()
+ApartmentDataEditorMenu:add_button("Instant Finish",
+function()
 	locals.set_int(FMC, AIFl3, 12)
 	locals.set_int(FMC, AIFl4, 99999)
 	locals.set_int(FMC, AIFl5, 99999)
-end)
+	locals.set_int(FMC, AIFl6, 99999)
+end
+)
+ApartmentDataEditorMenu:add_sameline()
+ApartmentDataEditorMenu:add_button("Instant Finish (Pacific Standard)", function()
+    locals.set_int(FMC, 19787 + 1062, 5)
+    locals.set_int(FMC, 19787 + 1740 + 1, 80)
+    locals.set_int(FMC, 19787 + 2686, 10000000)
+    locals.set_int(FMC, 28407 + 1, 99999)
+    locals.set_int(FMC, 31663 + 1 + 68, 99999)
+end
+)
 ApartmentDataEditorMenu:add_text("Note: After Clicking Unlock All jobs, restart the game")
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -13935,9 +13966,22 @@ end)
 CasinoHeistEditorMenu:add_separator()
 CasinoHeistEditorMenu:add_text("Instant Heist Passed")
 CasinoHeistEditorMenu:add_button("Instant Finish $$", function()
-	locals.set_int(FMC2020, IHPB, 9)
-	locals.set_int(FMC2020, IHPL, 50)
-	gui.show_message("Instant Heist Passed", "Activated")
+    local approachType = stats.get_int(MPX() .. "H3OPT_APPROACH")
+    if approachType == 3 then
+        locals.set_int(FMC, DCXf1, 12)
+        locals.set_int(FMC, DCXf3, 80)
+        locals.set_int(FMC, DCXf4, 10000000)
+        locals.set_int(FMC, DCXf5, 99999)
+        locals.set_int(FMC, DCXf6, 99999)
+        gui.show_message("Instant Heist Passed", "Activated")
+    else    
+        locals.set_int(FMC, DCXf2, 12)
+        locals.set_int(FMC, DCXf3, 80)
+        locals.set_int(FMC, DCXf4, 10000000)
+        locals.set_int(FMC, DCXf5, 99999)
+        locals.set_int(FMC, DCXf6, 99999)
+        gui.show_message("Instant Heist Passed", "Activated")
+    end
 end)
 
 local CasinoHeistExtra = CasinoHeistEditorMenu:add_tab("Extras")
@@ -13966,11 +14010,6 @@ CasinoHeistExtra:add_button("Bypass Drill Vault Door", function()
 end)
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
--- Updated by DeadlineEm, I used your modest menu version for ideas for this.
-
--- Deleting enemies does not allow the keycards to drop, so teleport into the
--- seondary buildings to grab the loot, you can open the door for others from
--- the inside
 local CayoHeistEditorMenu = HeistsDataEditorMenu:add_tab("Cayo Perico Editor")
 
 CayoHeistEditorMenu:add_text("Cuts to All")
@@ -14452,7 +14491,7 @@ CayoHeistEditorMenu:add_text(
 	"Press this after clicking one of the above presets or after the reset heist Completely Option"
 )
 CayoHeistEditorMenu:add_button("Reset Kosatka Board", function()
-	locals.set_int(HIP, 1564, 2)
+	locals.set_int(HIP, CPRSl, 2)
 	gui.show_message("Cayo Heist", "Planning board has been reset!")
 end)
 
@@ -14694,7 +14733,7 @@ cayoSizeEditor:add_text("Minimum values are exact defaults for ALL targets.")
 cayoSizeEditor:add_separator()
 cayoSizeEditor:add_text("Press this after setting values.")
 cayoSizeEditor:add_button("Reset Kosatka Board", function()
-	locals.set_int(HIP, 1564, 2)
+	locals.set_int(HIP, 1566, 2)
 	gui.show_message("Cayo Heist", "Planning board has been reset!")
 end)
 
@@ -14754,10 +14793,10 @@ end)
 DoomsdayHeistEditorMenu:add_separator()
 DoomsdayHeistEditorMenu:add_text("Instant Heist Passed")
 DoomsdayHeistEditorMenu:add_button("Instant Finish $$", function()
-	locals.set_int(FMC, 19746, 12)
-	locals.set_int(FMC, 19746 + 2686, 10000000)
-	locals.set_int(FMC, 28400 + 1, 99999)
-	locals.set_int(FMC, 31656 + 69, 99999)
+	locals.set_int(FMC, 19787, 12)
+	locals.set_int(FMC, 19787 + 2686, 10000000)
+	locals.set_int(FMC, 29011 + 1, 99999)
+	locals.set_int(FMC, 31663 + 69, 99999)
 	gui.show_message("Instant Heist Passed", "Activated")
 end)
 
