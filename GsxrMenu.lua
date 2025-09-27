@@ -1,5 +1,7 @@
 --Required Stats----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+--Required Stats----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 local function MPX()
 	local PI = stats.get_int("MPPLY_LAST_MP_CHAR")
 	if PI == 0 then
@@ -26,101 +28,141 @@ end
 
 is_player_male = (ENTITY.GET_ENTITY_MODEL(PLAYER.PLAYER_PED_ID()) == joaat("mp_m_freemode_01"))
 
+local currentlevel = stats.get_int(MPX() .. "CHAR_RANK_FM")
+local currentrp = stats.get_int(MPX() .. "CHAR_XP_FM")
+local currentcrewlevel = stats.get_int("MPPLY_CURRENT_CREW_RANK")
+
+script.register_looped("AutoStatsUpdater", function(script)
+    local success, err = pcall(function()
+        local newlevel = stats.get_int(MPX() .. "CHAR_RANK_FM")
+        local newrp = stats.get_int(MPX() .. "CHAR_XP_FM")
+        local newcrewlevel = stats.get_int("MPPLY_CURRENT_CREW_RANK")
+
+        if newlevel ~= currentlevel or newrp ~= currentrp or newcrewlevel ~= currentcrewlevel then
+            currentlevel = newlevel
+            currentrp = newrp
+            currentcrewlevel = newcrewlevel
+        end
+    end)
+    
+    if not success then
+        gui.show_message("Stats Update Error", "Failed to update stats: " .. tostring(err))
+    end
+end)
+
 --Required Scripts--
 
 FMC = "fm_mission_controller"
+FMMCL = "fmmc_launcher"
 FMC2020 = "fm_mission_controller_2020"
 HIP = "heist_island_planning"
 
 --Globals & Locals & Variables--
 
 FMg = 262145 -- free mode global ("CASH_MULTIPLIER") //correct
-ACg1 = 1929317 + 1 + 1 -- global apartment player 1 cut global
-ACg2 = 1929317 + 1 + 2 -- global apartment player 2 cut global
-ACg3 = 1929317 + 1 + 3 -- global apartment player 3 cut global
-ACg4 = 1929317 + 1 + 4 -- global apartment player 4 cut global
-ACg5 = 1931285 + 3008 + 1 -- local apartment player 1 cut global
+CSg1    = 1575038 						-- change session (type) 1 					// Guide:   NETWORK::UGC_SET_USING_OFFLINE_CONTENT(false);
+CSg2    = 1574589 						-- change session (switch) 2 				// Guide:   MP_POST_MATCH_TRANSITION_SCENE
+CSg3    = 1574589 + 2 					-- change session (quit) 3 					// Guide:   MP_POST_MATCH_TRANSITION_SCENE
 
+-- Apartment Heist
+ACg1 = 1931323 + 1 + 1 -- global apartment player 1 cut global ("fmmc_launcher")
+ACg2 = 1931323 + 1 + 2 -- global apartment player 2 cut global ("fmmc_launcher")
+ACg3 = 1931323 + 1 + 3 -- global apartment player 3 cut global ("fmmc_launcher")
+ACg4 = 1931323 + 1 + 4 -- global apartment player 4 cut global ("fmmc_launcher")
+ACg5 = 1933291 + 3008 + 1 -- local apartment player 1 cut global ("fmmc_launcher")
 AUAJg1 = FMg + 9101 -- apartment unlock all jobs global 1 ("ROOT_ID_HASH_THE_FLECCA_JOB")
 AUAJg2 = FMg + 9106 -- apartment unlock all jobs global 2 ("ROOT_ID_HASH_THE_PRISON_BREAK")
 AUAJg3 = FMg + 9113 -- apartment unlock all jobs global 3 ("ROOT_ID_HASH_THE_HUMANE_LABS_RAID")
 AUAJg4 = FMg + 9119 -- apartment unlock all jobs global 4 ("ROOT_ID_HASH_SERIES_A_FUNDING")
 AUAJg5 = FMg + 9125 -- apartment unlock all jobs global 5 ("ROOT_ID_HASH_THE_PACIFIC_STANDARD_JOB")
-AIFl3 = 20612 -- apartment instant finish local 1
-AIFl4 = 28400 + 1 -- apartment instant finish local 2
-AIFl5 = 31656 + 69 -- apartment instant finish local 3
-AFHl = 11812 + 24 -- apartment fleeca hack local 
-AFDl = 10143 + 11 -- apartment fleeca drill local
+AIFl3 = 19787 -- apartment instant finish local 1
+AIFl4 = 19787 + 2686 -- apartment instant finish local 2
+AIFl5 = 28407 + 1 -- apartment instant finish local 3
+AIFl6 = 31663 + 1 + 68
+AFHl = 11818 + 24 -- apartment fleeca hack local
+AFDl = 10107 + 11 -- apartment fleeca drill local
+AHSo = 19789  -- Apartment heist skip checkpoint
 
-DCRBl = 185 -- diamond casino reload board local
-DCCg1 = 1965614 + 1497 + 736 + 92 + 1 -- diamond casino player 1 cut global ("gb_casino_heist_planning")
-DCCg2 = 1965614 + 1497 + 736 + 92 + 2 -- diamond casino player 2 cut global
-DCCg3 = 1965614 + 1497 + 736 + 92 + 3 -- diamond casino player 3 cut global
-DCCg4 = 1965614 + 1497 + 736 + 92 + 4 -- diamond casino player 4 cut global
-DCCl = FMg + 28313 -- Casino_Cut_Lester_offset
-DCCh = FMg + 28349 - 1 --Casino_Cut_Hacker_offset
-DCCd = FMg + 28344 - 1 --Casino_Cut_Driver_offset
-DCCgun = FMg + 28339 - 1 --Casino_Cut_Gunman_offset
-DCFHl = 53087 -- diamond casino fingerprint hack local
-DCKHl = 54153 -- diamond casino keypad hack local
-DCDVDl1 = 10143 + 7 -- diamond casino drill vault door local 1 --("DLC_HEIST_MINIGAME_FLEECA_DRILLING_SCENE")
-DCDVDl2 = 10143 + 37 -- diamond casino drill vault door local 2
+-- Diamond Casino Heist
+DCRBl = 208 -- diamond casino reload board local
+DCCg1 = 1967717 + 1497 + 736 + 92 + 1 -- diamond casino player 1 cut global ("gb_casino_heist_planning")
+DCCg2 = 1967717 + 1497 + 736 + 92 + 2 -- diamond casino player 2 cut global ("gb_casino_heist_planning")
+DCCg3 = 1967717 + 1497 + 736 + 92 + 3 -- diamond casino player 3 cut global ("gb_casino_heist_planning")
+DCCg4 = 1967717 + 1497 + 736 + 92 + 4 -- diamond casino player 4 cut global ("gb_casino_heist_planning")
+DCCl = FMg + 28313 -- ("CH_LESTER_CUT")
+DCCh = FMg + 28349 - 1 --("2027377935")
+DCCd = FMg + 28344 - 1 --("88090906")
+DCCgun = FMg + 28339 - 1 --("74718927")
+DCFHl = 53127 -- diamond casino fingerprint hack local
+DCKHl = 54193 -- diamond casino keypad hack local
+DCDVDl1 = 10107 + 7 -- diamond casino drill vault door local 1 --("DLC_HEIST_MINIGAME_FLEECA_DRILLING_SCENE") in ("fm_mission_controller")
+DCDVDl2 = 10107 + 37 -- diamond casino drill vault door local 2 --("fm_mission_controller")
+DCXf1 = 19787
+DCXf2 = 19787 + 1062
+DCXf3 = 19787 + 1740 + 1
+DCXf4 = 19787 + 2686
+DCXf5 = 28407 + 1
+DCXf6 = 31663 + 1 + 68
 
-CPCg1 = 1972414 + 831 + 56 + 1 -- cayo perico player 1 cut global
-CPCg2 = 1972414 + 831 + 56 + 2 -- cayo perico player 2 cut global
-CPCg3 = 1972414 + 831 + 56 + 3 -- cayo perico player 3 cut global
-CPCg4 = 1972414 + 831 + 56 + 4 -- cayo perico player 4 cut global
+-- Cayo Perico Heist
+CPRSl = 1566 -- cayo perico reload screen local
+CPCg1 = 1974520 + 831 + 56 + 1 -- cayo perico player 1 cut global --("heist_island_planning")
+CPCg2 = 1974520 + 831 + 56 + 2 -- cayo perico player 2 cut global --("heist_island_planning")
+CPCg3 = 1974520 + 831 + 56 + 3 -- cayo perico player 3 cut global --("heist_island_planning")
+CPCg4 = 1974520 + 831 + 56 + 4 -- cayo perico player 4 cut global --("heist_island_planning")
+CPFHl = 25058 -- cayo perico fingerprint hack local ("heist") in ("fm_mission_controller_2020")
+CPPCCl = 31123 + 3 -- cayo perico plasma cutter cut local ("DLC_H4_anims_glass_cutter_Sounds") in ("fm_mission_controller_2020")
+CPSTCl = 29883 -- cayo perico drainage pipe cut local ("IntroFinished") in ("fm_mission_controller_2020")
+CPXf1 = 54353 -- cayo perico instant finish local 1
+CPXf2 = 54353 + 1776 + 1 -- cayo perico instant finish local 2
 
-CPFHl = 24986 -- cayo perico fingerprint hack local ("MP_STAT_CR_FINGERPRINT")
-CPPCCl = 31049 + 3 -- cayo perico plasma cutter cut local ("DLC_H4_anims_glass_cutter_Sounds")
-CPSTCl = 29810 -- cayo perico drainage pipe cut local ("IntroFinished")
+-- Doomsday Heist
+DDSHl = 1294 + 135 -- doomsday doomsday scenario hack local
+DCg1 = 1963610 + 812 + 50 + 1 -- doomsday player 1 cut global --("gb_gang_ops_planning")
+DCg2 = 1963610 + 812 + 50 + 2 -- doomsday player 2 cut global --("gb_gang_ops_planning")
+DCg3 = 1963610 + 812 + 50 + 3 -- doomsday player 3 cut global --("gb_gang_ops_planning")
+DCg4 = 1963610 + 812 + 50 + 4 -- doomsday player 4 cut global --("gb_gang_ops_planning")
 
-DDSHl = 1292 + 135 -- doomsday doomsday scenario hack local
-DCg1 = 1960755 + 812 + 50 + 1 -- doomsday player 1 cut global
-DCg2 = 1960755 + 812 + 50 + 2 -- doomsday player 2 cut global
-DCg3 = 1960755 + 812 + 50 + 3 -- doomsday player 3 cut global
-DCg4 = 1960755 + 812 + 50 + 4 -- doomsday player 4 cut global
+IHPB = 54353 --Instant Heist Passed Local Base (Casino And CayoPerico)
+IHPL = 54353 + 1776 + 1 --Instant Heist Passed Locals (Casino And CayoPerico)
 
-IHPB = 52171 --Instant Heist Passed Local Base (Casino And CayoPerico)
-IHPL = 52171 + 1776 + 1 --Instant Heist Passed Locals (Casino And CayoPerico)
+NLCl = 204 + 32 + 1 --("nightclub_office_cutscene") in ("am_mp_nightclub")
 
-NLCl = 202 + 32 + 1
-
-SNOW = 262145 + 4413
-halloweatherAddress = 262145 + 32158
+SNOW = FMg + 4413
+halloweatherAddress = FMg + 32157
 
 --BV = Ballastic Value----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-BV = 262145 + 20024
+BV = FMg + 20024
 
 --CCBL = Casino Chips Buy Limit-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-CCBL0 = 262145 + 26535
-CCBL1 = 262145 + 26536
+CCBL0 = FMg + 26534
+CCBL1 = FMg + 26535
 
 --BAS=Bag Size------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-BAS1 = 262145 + 29211
+BAS1 = FMg + 29210
 
 --PSV=Panther Statue-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-PSV = 262145 + 29463
+PSV = FMg + 29462
 
 --PDIAMOND=Pink Diamond---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-PDIAMOND = 262145 + 29461
+PDIAMOND = FMg + 29460
 
 --BB=Bearer Bonds---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-BB = 262145 + 29460
+BB = FMg + 29459
 
 --RN=Ruby Necklace--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-RN = 262145 + 29459
+RN = FMg + 29458
 
 --TEQUILA=Tequila---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-TEQUILA = 262145 + 29458
+TEQUILA = FMg + 29457
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
