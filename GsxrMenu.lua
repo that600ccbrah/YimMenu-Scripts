@@ -14199,23 +14199,8 @@ end)
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-MissionsSelectorAndCooldownMenu = L7NEG:add_tab("Missions Selector And cooldown Menu")
 
-MissionsSelectorAndCooldownMenu:add_button("Remove Dax Fooligan missions CoolDown ", function()
-	stats.set_int(MPX() .. "XM22JUGGALOWORKCDTIMER", -1)
-end)
 
-MissionsSelectorAndCooldownMenu:add_button("Remove VIP/MC Cooldown", function()
-	stats.set_int("MPPLY_VIPGAMEPLAYDISABLEDTIMER", 0)
-end)
-
-MissionsSelectorAndCooldownMenu:add_button("Skip Yacht Missions", function()
-	stats.set_int(MPX() .. "YACHT_MISSION_PROG", 0)
-	stats.set_int(MPX() .. "YACHT_MISSION_FLOW", 21845)
-	stats.set_int(MPX() .. "CASINO_DECORATION_GIFT_1", -1)
-end)
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 GiveCars = L7NEG:add_tab("GIVE CARS TO FRIENDS SOON")
