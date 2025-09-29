@@ -1,7 +1,7 @@
 --gsxr's money loop script
 gui.show_message("GsxrLoopv2.3 LUA Undetected", "INJECTION SUCCESS;) DISCORD:notgsxr_ Reworked $ Loops And Detection In v2.3")
 
-log.warning("This Log Is Here To Notify CREATED BY that600ccbrah On Discord Only Get $20M A Day For Ur Safety")
+log.warning("This Log Is Here To Notify CREATED BY notgsxr_ On Discord Only Get $10M A Day For Ur Safety")
 
 local TransactionManager <const> = {};
 TransactionManager.__index = TransactionManager
@@ -102,3 +102,4 @@ end
 
 
 TransactionManager.new():Init()
+
