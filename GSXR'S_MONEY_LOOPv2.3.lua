@@ -1,5 +1,5 @@
 --gsxr's money loop script
-gui.show_message("GsxrLoopv2.3 LUA Undetected", "INJECTION SUCCESS;) INSTAGRAM:luke_600cc Reworked $ Loops And Detection In v2.3")
+gui.show_message("GsxrLoopv2.3 LUA Undetected", "INJECTION SUCCESS;) DISCORD:notgsxr_ Reworked $ Loops And Detection In v2.3")
 
 log.warning("This Log Is Here To Notify CREATED BY that600ccbrah On Discord Only Get $20M A Day For Ur Safety")
 
@@ -98,6 +98,7 @@ function TransactionManager:Init()
         end)
     end    
 end
+
 
 
 TransactionManager.new():Init()
